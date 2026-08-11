@@ -1,0 +1,15 @@
+{
+  "API_URL": "http://127.0.0.1:8000/api",
+  "Terminal_ID": "KIOSK-001",
+  "Printer_Name": "EPSON TM-T88V",
+  "Printer_Device": "/dev/usb/lp0",
+  "BillAcceptor_Port": "/dev/ttyUSB0",
+  "CoinAcceptor_Port": "",
+  "AdminPassword": "admin123",
+  "Currency": "NAD",
+  "CurrencySymbol": "N$",
+  "SessionTimeoutSeconds": 120,
+  "DepositRetryIntervalMs": 5000,
+  "DepositMaxRetries": 12,
+  "KioskLockdown": false
+}
