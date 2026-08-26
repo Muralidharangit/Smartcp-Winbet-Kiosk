@@ -5,9 +5,8 @@ import { useMachine } from '../services/sessionStore';
 const NAV = [
   { to: '/home', label: 'Home', icon: '⌂', end: true as const },
   { to: '/play', label: 'Popular', icon: '★', needsCredit: true },
-  { to: '/play/slots', label: 'Slots', icon: '▣', needsCredit: true },
-  { to: '/play/redblack', label: 'Table Games', icon: '♠', needsCredit: true },
-  { to: '/play/wheel', label: 'Instant Games', icon: '⚡', needsCredit: true },
+  { to: '/play/aviator', label: 'Aviator', icon: '✈', needsCredit: true },
+  { to: '/play/wheel', label: 'Lucky Wheel', icon: '⚡', needsCredit: true },
 ];
 
 type Props = {
@@ -166,7 +165,7 @@ export default function ArenaShell({
               </li>
               <li>
                 <strong>Choose a game</strong>
-                <span>Live games unlock with credit</span>
+                <span>Aviator or Lucky Wheel</span>
               </li>
               <li>
                 <strong>Cash out</strong>

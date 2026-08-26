@@ -4,25 +4,18 @@ import { useMachine } from '../services/sessionStore';
 
 const GAMES = [
   {
+    id: 'aviator',
+    title: 'Aviator',
+    blurb: 'Live Spribe crash game',
+    path: '/play/aviator',
+    image: '/arena/aviator.png',
+  },
+  {
     id: 'wheel',
     title: 'Lucky Wheel',
     blurb: 'Spin for multipliers up to 10×',
     path: '/play/wheel',
     image: '/arena/tile-wheel.png',
-  },
-  {
-    id: 'slots',
-    title: 'Neon Slots',
-    blurb: 'Three-reel neon casino slots',
-    path: '/play/slots',
-    image: '/arena/tile-slots.png',
-  },
-  {
-    id: 'redblack',
-    title: 'Red / Black',
-    blurb: 'Classic even-money colour bet',
-    path: '/play/redblack',
-    image: '/arena/tile-redblack.png',
   },
 ] as const;
 
@@ -46,13 +39,13 @@ export default function GamesLobby() {
           className="arena-banner arena-banner-sm"
           style={{
             backgroundImage:
-              'linear-gradient(100deg, rgba(7,7,10,0.92) 0%, rgba(7,7,10,0.55) 100%), url(/arena/banner-777.png)',
+              'linear-gradient(100deg, rgba(7,7,10,0.92) 0%, rgba(7,7,10,0.55) 100%), url(/arena/aviator.png)',
           }}
         >
           <div>
             <p className="arena-banner-kicker">Popular</p>
             <h1>Choose your game</h1>
-            <p>Live games on this kiosk. Credit ready.</p>
+            <p>Aviator and Lucky Wheel. Credit ready.</p>
           </div>
         </section>
       )}

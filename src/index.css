@@ -926,3 +926,134 @@ input {
   font-size: 0.85rem;
 }
 
+.hw-lab-dock {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 90;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background: #0f172a;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  color: #f8fafc;
+}
+
+.hw-lab-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.hw-lab-head strong {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.hw-lab-head span {
+  display: block;
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.hw-lab-hide,
+.hw-lab-tab {
+  appearance: none;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.12);
+  color: #f0d78c;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.hw-lab-tab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 90;
+}
+
+.hw-lab-balance {
+  margin: 0 0 10px;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.hw-lab-label {
+  margin: 12px 0 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.hw-lab-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 10px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.hw-lab-tickets {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.hw-lab-tickets li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+
+.hw-lab-tickets code {
+  font-size: 0.72rem;
+  color: #fde68a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hw-lab-tickets button {
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.hw-lab-status {
+  margin: 10px 0 0;
+  color: #86efac;
+  font-size: 0.8rem;
+}
+
+.hw-lab-dock .kx-btn-block {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+}
+
+.hw-lab-dock .kx-btn-sm {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+}
+

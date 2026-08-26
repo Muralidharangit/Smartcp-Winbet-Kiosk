@@ -109,6 +109,8 @@ export function createBarcodeListener(
   })
 
   const handler = (e: KeyboardEvent) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return
+
     const target = e.target as HTMLElement | null
     if (
       target &&

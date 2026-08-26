@@ -2441,3 +2441,95 @@ body {
   margin: 0;
   word-break: break-all;
 }
+
+.arena-main .provider-game-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--stroke-strong);
+  background: #0b0b0b;
+}
+
+.provider-game-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stroke);
+  background: var(--panel);
+}
+
+.provider-game-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-game-title strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.provider-game-title span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.provider-game-balance {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold-2);
+  background: var(--gold-dim);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  white-space: nowrap;
+}
+
+.provider-game-loading {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  color: var(--text);
+  text-align: center;
+  min-height: 0;
+}
+
+.provider-game-loading p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.provider-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 3px solid rgba(212, 175, 55, 0.2);
+  border-top-color: var(--gold);
+  animation: provider-spin 0.8s linear infinite;
+}
+
+@keyframes provider-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.provider-game-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #000;
+}

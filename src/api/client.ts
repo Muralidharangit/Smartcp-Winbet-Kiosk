@@ -1,4 +1,4 @@
-import { getKioskApiBaseUrl, getPortalSlug, setPortalSlug } from '../config/env'
+import { getKioskApiBaseUrl, getPortalSlug, setPortalSlug, API_ORIGIN } from '../config/env'
 import { loadTerminal } from '../lib/storage'
 
 function resolvePortalSlug(explicit?: string): string {
@@ -236,6 +236,16 @@ export type GameCatalogItem = {
   description: string
   payout_label: string
   choices: string[]
+  kind?: 'local' | 'provider'
+  provider?: string
+}
+
+export type ProviderLaunchResult = {
+  game_url: string
+  game_name: string
+  provider: string
+  game_id: string
+  player_id: number
 }
 
 export async function fetchGames(): Promise<GameCatalogItem[]> {
@@ -243,6 +253,30 @@ export async function fetchGames(): Promise<GameCatalogItem[]> {
     headers: { Accept: 'application/json' },
   })
   const body = await parseJson<ApiSuccess<GameCatalogItem[]> | ApiError>(response)
+  if (!body.success) {
+    throw new TerminalApiError(body.message, response.status)
+  }
+  return body.data
+}
+
+export async function launchProviderGame(
+  machineId: string,
+  hardwareId: string,
+  game: string,
+): Promise<ProviderLaunchResult> {
+  const returnUrl = `${API_ORIGIN.replace(/\/api$/, '')}/terminal-return`
+  const response = await fetch(`${apiBase()}/kiosks/launch-game`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      machine_id: machineId,
+      device_fingerprint: hardwareId,
+      game,
+      return_url: returnUrl,
+    }),
+  })
+
+  const body = await parseJson<ApiSuccess<ProviderLaunchResult> | ApiError>(response)
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }

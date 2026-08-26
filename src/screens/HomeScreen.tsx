@@ -5,9 +5,8 @@ type GameTile = {
   id: string;
   title: string;
   blurb: string;
-  path?: string;
+  path: string;
   image: string;
-  live?: boolean;
 };
 
 const GAMES: GameTile[] = [
@@ -17,41 +16,6 @@ const GAMES: GameTile[] = [
     blurb: 'Spin up to 10×',
     path: '/play/wheel',
     image: '/arena/tile-wheel.png',
-    live: true,
-  },
-  {
-    id: 'slots',
-    title: 'Neon Slots',
-    blurb: '3-reel neon win',
-    path: '/play/slots',
-    image: '/arena/tile-slots.png',
-    live: true,
-  },
-  {
-    id: 'rb',
-    title: 'Red / Black',
-    blurb: 'Even money table',
-    path: '/play/redblack',
-    image: '/arena/tile-redblack.png',
-    live: true,
-  },
-  {
-    id: 'lucky6',
-    title: 'e Lucky 6',
-    blurb: 'Coming soon',
-    image: '/arena/lucky6.png',
-  },
-  {
-    id: 'bingo',
-    title: 'Bingo',
-    blurb: 'Coming soon',
-    image: '/arena/bingo.png',
-  },
-  {
-    id: 'goal',
-    title: 'Goal Bonanza',
-    blurb: 'Coming soon',
-    image: '/arena/goal-bonanza.png',
   },
 ];
 
@@ -60,16 +24,7 @@ export default function HomeScreen() {
   const { balance, showAlert } = useMachine();
   const locked = balance <= 0;
 
-  function openGame(g: GameTile) {
-    if (!g.path || !g.live) {
-      showAlert({
-        tone: 'warn',
-        title: 'Coming soon',
-        message: `${g.title} is not available on this kiosk yet.`,
-        autoCloseMs: 0,
-      });
-      return;
-    }
+  function openGame(path: string) {
     if (locked) {
       showAlert({
         tone: 'warn',
@@ -79,16 +34,7 @@ export default function HomeScreen() {
       });
       return;
     }
-    navigate(g.path);
-  }
-
-  function openAviator() {
-    showAlert({
-      tone: 'warn',
-      title: 'Coming soon',
-      message: 'Aviator is not available on this kiosk yet.',
-      autoCloseMs: 0,
-    });
+    navigate(path);
   }
 
   return (
@@ -113,19 +59,23 @@ export default function HomeScreen() {
             </li>
             <li>
               <strong>3</strong>
-              <span>Tap a live game to start</span>
+              <span>Tap Aviator or Lucky Wheel</span>
             </li>
           </ul>
         </section>
       )}
 
       {!locked && (
-        <button type="button" className="arena-banner arena-banner-aviator" onClick={openAviator}>
+        <button
+          type="button"
+          className="arena-banner arena-banner-aviator"
+          onClick={() => openGame('/play/aviator')}
+        >
           <div className="arena-banner-copy">
-            <p className="arena-banner-kicker">Featured · Coming soon</p>
+            <p className="arena-banner-kicker">Featured · Live</p>
             <h1>Aviator</h1>
-            <p>Crash-style flight game — featured on this kiosk soon.</p>
-            <span className="arena-banner-cta">Coming soon</span>
+            <p>Crash-style flight game — same live Aviator as SmartPC.</p>
+            <span className="arena-banner-cta">Play Aviator</span>
           </div>
           <div className="arena-banner-media">
             <img src="/arena/aviator.png" alt="Aviator" />
@@ -136,38 +86,29 @@ export default function HomeScreen() {
       <section className="arena-row arena-row-fit">
         <div className="arena-row-head">
           <h2>{locked ? 'Preview' : 'Games'}</h2>
-          <span>{locked ? 'Unlock with cash' : 'Live + coming soon'}</span>
+          <span>{locked ? 'Unlock with cash' : 'Lucky Wheel'}</span>
         </div>
         <div className="arena-tiles arena-tiles-fit">
-          {GAMES.map((g) => {
-            const isLive = !!g.live;
-            const tileLocked = locked || !isLive;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                className={`arena-tile arena-tile-card${tileLocked ? ' is-locked-tile' : ''}${
-                  !isLive ? ' is-soon' : ''
-                }`}
-                onClick={() => openGame(g)}
-                aria-disabled={tileLocked}
-              >
-                <span className="arena-tile-badge">
-                  {locked && isLive ? 'Locked' : isLive ? 'Live' : 'Soon'}
-                </span>
-                <div className="arena-tile-media">
-                  <img src={g.image} alt="" />
-                </div>
-                <div className="arena-tile-meta">
-                  <strong>{g.title}</strong>
-                  <em>{locked && isLive ? 'Insert cash to unlock' : g.blurb}</em>
-                </div>
-              </button>
-            );
-          })}
+          {GAMES.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              className={`arena-tile arena-tile-card${locked ? ' is-locked-tile' : ''}`}
+              onClick={() => openGame(g.path)}
+              aria-disabled={locked}
+            >
+              <span className="arena-tile-badge">{locked ? 'Locked' : 'Live'}</span>
+              <div className="arena-tile-media">
+                <img src={g.image} alt="" />
+              </div>
+              <div className="arena-tile-meta">
+                <strong>{g.title}</strong>
+                <em>{locked ? 'Insert cash to unlock' : g.blurb}</em>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
-
     </div>
   );
 }

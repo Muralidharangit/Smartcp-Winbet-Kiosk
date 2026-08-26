@@ -40,3 +40,12 @@ export function getKioskApiBaseUrl(portalSlug = getPortalSlug()): string {
 
 /** @deprecated use getKioskApiBaseUrl — kept for older imports */
 export const API_BASE_URL = getKioskApiBaseUrl()
+
+/**
+ * Demo hardware overlay (Ctrl+Shift+H). Set `VITE_HW_SIMULATOR=true` in `.env`.
+ * Must be off for production cabinet builds.
+ */
+export function isHardwareSimulatorEnabled(): boolean {
+  const raw = (import.meta.env.VITE_HW_SIMULATOR as string | undefined)?.trim().toLowerCase()
+  return raw === 'true' || raw === '1' || raw === 'yes'
+}
