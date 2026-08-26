@@ -1,6 +1,22 @@
-import { API_BASE_URL } from '../config/env'
+import { getKioskApiBaseUrl, getPortalSlug, setPortalSlug } from '../config/env'
+import { loadTerminal } from '../lib/storage'
 
-const API_BASE = API_BASE_URL
+function resolvePortalSlug(explicit?: string): string {
+  const fromArg = explicit?.trim()
+  if (fromArg) return fromArg
+  const fromStore = getPortalSlug().trim()
+  if (fromStore) return fromStore
+  const stored = loadTerminal()?.portalSlug?.trim()
+  if (stored) {
+    setPortalSlug(stored)
+    return stored
+  }
+  return ''
+}
+
+function apiBase(portalSlug?: string): string {
+  return getKioskApiBaseUrl(resolvePortalSlug(portalSlug))
+}
 
 export type TerminalRegistration = {
   success: boolean
@@ -11,6 +27,7 @@ export type TerminalRegistration = {
   site_id: number
   site_name: string
   status: string
+  portal_slug?: string
 }
 
 export type TerminalSession = {
@@ -22,10 +39,21 @@ export type TerminalSession = {
   status: string
   current_balance: number
   loaded_amount: number
+  portal_slug?: string
 }
 
 type ApiSuccess<T> = { success: true; data: T; message?: string }
-type ApiError = { success: false; message: string; errors?: { code?: string } }
+type ApiError = {
+  success: false
+  message: string
+  errors?: { code?: string; device_fingerprint?: string | string[] }
+}
+
+function firstErrorValue(value: unknown): string | undefined {
+  if (typeof value === 'string' && value) return value
+  if (Array.isArray(value) && typeof value[0] === 'string' && value[0]) return value[0]
+  return undefined
+}
 
 export class TerminalApiError extends Error {
   status: number
@@ -62,33 +90,74 @@ async function parseJson<T>(response: Response): Promise<T> {
       }
     }
 
-    const code =
+    const errors =
       typeof body === 'object' &&
       body !== null &&
       'errors' in body &&
       typeof (body as ApiError).errors === 'object' &&
-      (body as ApiError).errors !== null &&
-      'code' in ((body as ApiError).errors as object)
-        ? (body as ApiError).errors?.code
+      (body as ApiError).errors !== null
+        ? (body as ApiError).errors
         : undefined
+    const code =
+      errors?.code ||
+      firstErrorValue(errors?.device_fingerprint) ||
+      undefined
     throw new TerminalApiError(message, response.status, code)
   }
   return body as T
+}
+
+type RegisterApiData = {
+  machine_id: string
+  hostname?: string
+  terminal_name?: string
+  pc_name?: string
+  site_id?: number
+  shop_id?: number
+  site_name?: string
+  shop_name?: string
+  status: string
 }
 
 export async function registerTerminal(input: {
   registration_token: string
   device_fingerprint: string
   operating_system: string
+  portal_slug: string
 }): Promise<TerminalRegistration> {
-  const response = await fetch(`${API_BASE}/kiosks/register`, {
+  const portalSlug = input.portal_slug.trim()
+  setPortalSlug(portalSlug)
+
+  const response = await fetch(`${apiBase(portalSlug)}/kiosks/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      registration_token: input.registration_token,
+      device_fingerprint: input.device_fingerprint,
+      operating_system: input.operating_system,
+    }),
   })
 
-  const body = await parseJson<TerminalRegistration & { message?: string }>(response)
-  return body
+  const body = await parseJson<ApiSuccess<RegisterApiData> & { message?: string }>(response)
+  if (!body.success || !body.data) {
+    throw new TerminalApiError(body.message || 'Registration failed', response.status)
+  }
+
+  const data = body.data
+  const hostname = data.hostname || data.terminal_name || data.pc_name || data.machine_id
+  const siteName = data.site_name || data.shop_name || ''
+
+  return {
+    success: true,
+    message: body.message || 'Registration successful',
+    machine_id: data.machine_id,
+    hostname,
+    pc_name: hostname,
+    site_id: data.site_id ?? data.shop_id ?? 0,
+    site_name: siteName,
+    status: data.status,
+    portal_slug: portalSlug,
+  }
 }
 
 export async function fetchSession(
@@ -99,15 +168,28 @@ export async function fetchSession(
     machine_id: machineId,
     device_fingerprint: hardwareId,
   })
-  const response = await fetch(`${API_BASE}/kiosks/session?${params}`, {
+  const response = await fetch(`${apiBase()}/kiosks/session?${params}`, {
     headers: { Accept: 'application/json' },
   })
 
-  const body = await parseJson<ApiSuccess<TerminalSession> | ApiError>(response)
+  const body = await parseJson<
+    ApiSuccess<TerminalSession & { shop_name?: string; terminal_name?: string }> | ApiError
+  >(response)
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }
-  return body.data
+
+  const data = body.data
+  if (data.portal_slug) {
+    setPortalSlug(data.portal_slug)
+  }
+
+  return {
+    ...data,
+    hostname: data.hostname || data.terminal_name || data.pc_name,
+    pc_name: data.pc_name || data.hostname || data.terminal_name || data.machine_id,
+    site_name: data.site_name || data.shop_name || '',
+  }
 }
 
 export async function sendHeartbeat(
@@ -115,7 +197,7 @@ export async function sendHeartbeat(
   hardwareId: string,
   status: 'ONLINE' | 'OFFLINE',
 ): Promise<void> {
-  const response = await fetch(`${API_BASE}/kiosks/heartbeat`, {
+  const response = await fetch(`${apiBase()}/kiosks/heartbeat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -125,7 +207,10 @@ export async function sendHeartbeat(
     }),
   })
 
-  await parseJson(response)
+  const body = await parseJson<ApiSuccess<{ portal_slug?: string }>>(response)
+  if (body.data?.portal_slug) {
+    setPortalSlug(body.data.portal_slug)
+  }
 }
 
 export type BetResult = {
@@ -154,7 +239,7 @@ export type GameCatalogItem = {
 }
 
 export async function fetchGames(): Promise<GameCatalogItem[]> {
-  const response = await fetch(`${API_BASE}/kiosks/games`, {
+  const response = await fetch(`${apiBase()}/kiosks/games`, {
     headers: { Accept: 'application/json' },
   })
   const body = await parseJson<ApiSuccess<GameCatalogItem[]> | ApiError>(response)
@@ -171,7 +256,7 @@ export async function placeBet(
   choice: string,
   stake: number,
 ): Promise<BetResult> {
-  const response = await fetch(`${API_BASE}/kiosks/place-bet`, {
+  const response = await fetch(`${apiBase()}/kiosks/place-bet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -184,59 +269,6 @@ export async function placeBet(
   })
 
   const body = await parseJson<ApiSuccess<BetResult> | ApiError>(response)
-  if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
-  }
-  return body.data
-}
-
-export type CashOutRequest = {
-  id: number | string
-  machine_id: string
-  terminal_name?: string
-  pc_name?: string
-  site_name?: string
-  requested_amount: number
-  approved_amount?: number | null
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
-  remarks?: string | null
-  requested_at?: string
-  processed_at?: string
-}
-
-export type TerminalTurnover = {
-  target: number
-  wagered: number
-  bonus: number
-  completed: boolean
-  locked_bonus: number
-  cashable: number
-  remaining_to_wager: number
-  balance: number
-}
-
-export type CashOutTerminalStatus = {
-  pending: CashOutRequest | null
-  latest: CashOutRequest | null
-  turnover?: TerminalTurnover | null
-}
-
-export async function requestCashOut(
-  machineId: string,
-  hardwareId: string,
-  requestedAmount: number,
-): Promise<CashOutRequest> {
-  const response = await fetch(`${API_BASE}/cashout/request`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      machine_id: machineId,
-      device_fingerprint: hardwareId,
-      requested_amount: requestedAmount,
-    }),
-  })
-
-  const body = await parseJson<ApiSuccess<CashOutRequest> | ApiError>(response)
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }
@@ -273,7 +305,7 @@ export async function billIn(
   hardwareId: string,
   amount: number,
 ): Promise<BillInResult> {
-  const response = await fetch(`${API_BASE}/kiosks/bill-in`, {
+  const response = await fetch(`${apiBase()}/kiosks/bill-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -295,7 +327,7 @@ export async function cashOutTicket(
   machineId: string,
   hardwareId: string,
 ): Promise<CashOutTicketResult> {
-  const response = await fetch(`${API_BASE}/kiosks/cashout-ticket`, {
+  const response = await fetch(`${apiBase()}/kiosks/cashout-ticket`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -317,7 +349,7 @@ export async function cancelCashOutTicket(
   hardwareId: string,
   barcode: string,
 ): Promise<{ barcode: string; amount: number; current_balance: number; message: string }> {
-  const response = await fetch(`${API_BASE}/kiosks/cashout-ticket/cancel`, {
+  const response = await fetch(`${apiBase()}/kiosks/cashout-ticket/cancel`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -343,7 +375,7 @@ export async function ticketIn(
   hardwareId: string,
   barcode: string,
 ): Promise<TicketInResult> {
-  const response = await fetch(`${API_BASE}/kiosks/ticket-in`, {
+  const response = await fetch(`${apiBase()}/kiosks/ticket-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -373,7 +405,7 @@ export async function creditAdjust(
   delta: number,
   remarks = '',
 ): Promise<CreditAdjustResult> {
-  const response = await fetch(`${API_BASE}/kiosks/credit-adjust`, {
+  const response = await fetch(`${apiBase()}/kiosks/credit-adjust`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -391,90 +423,28 @@ export async function creditAdjust(
   return body.data
 }
 
-export async function fetchCashOutTerminalStatus(
-  machineId: string,
-  hardwareId: string,
-): Promise<CashOutTerminalStatus> {
-  const params = new URLSearchParams({
-    machine_id: machineId,
-    device_fingerprint: hardwareId,
-  })
-  const response = await fetch(`${API_BASE}/cashout/terminal-status?${params}`, {
-    headers: { Accept: 'application/json' },
-  })
-
-  const body = await parseJson<ApiSuccess<CashOutTerminalStatus> | ApiError>(response)
-  if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
-  }
-  return body.data
-}
-
-export type TerminalLoadRequest = {
-  id: number | string
-  machine_id: string
-  terminal_name?: string
-  pc_name?: string
-  balance_at_request: number
-  status: 'PENDING' | 'FULFILLED' | 'CANCELLED'
-  requested_at?: string
-  fulfilled_at?: string
-}
-
-export type LoadRequestTerminalStatus = {
-  pending: TerminalLoadRequest | null
-  latest: TerminalLoadRequest | null
-}
-
-export async function requestLoadCash(
-  machineId: string,
-  hardwareId: string,
-): Promise<TerminalLoadRequest> {
-  const response = await fetch(`${API_BASE}/terminals/load-request`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      machine_id: machineId,
-      device_fingerprint: hardwareId,
-    }),
-  })
-
-  const body = await parseJson<ApiSuccess<TerminalLoadRequest> | ApiError>(response)
-  if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
-  }
-  return body.data
-}
-
-export async function fetchLoadRequestTerminalStatus(
-  machineId: string,
-  hardwareId: string,
-): Promise<LoadRequestTerminalStatus> {
-  const params = new URLSearchParams({
-    machine_id: machineId,
-    device_fingerprint: hardwareId,
-  })
-  const response = await fetch(`${API_BASE}/terminals/load-request/status?${params}`, {
-    headers: { Accept: 'application/json' },
-  })
-
-  const body = await parseJson<ApiSuccess<LoadRequestTerminalStatus> | ApiError>(response)
-  if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
-  }
-  return body.data
-}
-
 export function formatCurrency(amount: number): string {
   return `N$ ${amount.toLocaleString('en-NA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function isHardwareUnauthorized(error: unknown): boolean {
+  if (!(error instanceof TerminalApiError)) {
+    return false
+  }
+
+  const hardwareCodes = ['HARDWARE_MISMATCH', 'HARDWARE_UNBOUND']
+  if (hardwareCodes.includes(error.code ?? '') || hardwareCodes.includes(error.message)) {
+    return error.status === 403 || error.status === 422
+  }
+
+  if (error.status !== 403) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
   return (
-    error instanceof TerminalApiError &&
-    error.status === 403 &&
-    (error.code === 'HARDWARE_MISMATCH' ||
-      error.message.toLowerCase().includes('hardware') ||
-      error.message.toLowerCase().includes('not authorized'))
+    message.includes('hardware') ||
+    message.includes('not authorized') ||
+    message.includes('not hardware-bound')
   )
 }

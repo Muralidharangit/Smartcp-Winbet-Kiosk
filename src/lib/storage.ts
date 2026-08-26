@@ -7,6 +7,7 @@ export type StoredTerminal = {
   siteName: string
   pcName: string
   hostname: string
+  portalSlug?: string
 }
 
 function isTauriRuntime(): boolean {
