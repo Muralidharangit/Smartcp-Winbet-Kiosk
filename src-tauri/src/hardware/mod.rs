@@ -1,5 +1,6 @@
 pub mod bill_acceptor;
 pub mod config;
+pub mod diagnose;
 pub mod printer;
 
 use bill_acceptor::BillAcceptorHandle;
@@ -85,6 +86,21 @@ pub fn hardware_start(app: AppHandle) -> Result<HardwareStatusDto, String> {
 #[tauri::command]
 pub fn hardware_status(state: State<'_, HardwareState>) -> Result<HardwareStatusDto, String> {
   status_from_state(&state)
+}
+
+#[tauri::command]
+pub fn hardware_diagnose(app: AppHandle) -> Result<diagnose::DiagnoseReport, String> {
+  let _ = start_hardware(&app);
+  let state = app.state::<HardwareState>();
+  Ok(diagnose::run(&state))
+}
+
+#[tauri::command]
+pub fn print_test_ticket(app: AppHandle) -> Result<bool, String> {
+  let _ = start_hardware(&app);
+  let state = app.state::<HardwareState>();
+  let printer = state.printer.lock().map_err(|e| e.to_string())?;
+  printer.print_test_slip()
 }
 
 #[tauri::command]

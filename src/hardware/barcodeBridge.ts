@@ -14,7 +14,7 @@ export type WedgeOptions = {
 
 function createWedgeScanner(options: WedgeOptions) {
   const minLength = options.minLength ?? 4
-  const maxGapMs = options.maxGapMs ?? 220
+  const maxGapMs = options.maxGapMs ?? 400
   const idleGapMs = options.idleGapMs ?? 600
   const idleAfterMs = options.idleAfterMs ?? 3000
 

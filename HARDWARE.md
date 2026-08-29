@@ -22,6 +22,8 @@ sudo usermod -aG lp,dialout $USER
 # log out / in
 ```
 
+On a new PC, in the kiosk app press **Ctrl+Shift+D**, password `admin123` (or `AdminPassword` in `config.json`). That runs group/device checks plus Print / Scan / Bill tests. Live cash-in is paused while the panel is open.
+
 ## Windows notes
 
 1. **Bill acceptor** — Device Manager → Ports (COM & LPT). Set `BillAcceptor_Port` to that COM (e.g. `COM3`) if auto is wrong.  

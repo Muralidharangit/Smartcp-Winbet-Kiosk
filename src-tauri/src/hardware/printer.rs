@@ -101,8 +101,11 @@ Date     : {}\n\
     payload.extend_from_slice(text.as_bytes());
     payload.push(b'\n');
 
+    // Module 2 fits 80 mm TM-T88V. Module 3 clipped the bars so tickets would not scan.
+    // New tickets are 9 chars (T + 8 hex), so width 2 is easier to read than the old 13-char codes.
+    payload.extend_from_slice(b"\n");
     payload.extend_from_slice(&[0x1b, 0x61, 0x01]);
-    payload.extend_from_slice(&[0x1d, 0x68, 72]);
+    payload.extend_from_slice(&[0x1d, 0x68, 96]);
     payload.extend_from_slice(&[0x1d, 0x77, 2]);
     payload.extend_from_slice(&[0x1d, 0x66, 0]);
     payload.extend_from_slice(&[0x1d, 0x48, 2]);
@@ -117,6 +120,38 @@ Date     : {}\n\
     log::info!("ticket_printed code={} path={}", ticket.code, path);
     Ok(true)
   }
+
+  pub fn print_test_slip(&self) -> Result<bool, String> {
+    if !self.connected {
+      return Err(format!(
+        "Printer not connected ({}). Check USB and 24V. {}",
+        self.device_path,
+        printer_help_hint()
+      ));
+    }
+    let mut payload: Vec<u8> = Vec::new();
+    payload.extend_from_slice(&[0x1b, 0x40]);
+    payload.extend_from_slice(&[0x1b, 0x61, 0x01]);
+    payload.extend_from_slice(&[0x1b, 0x45, 0x01]);
+    payload.extend_from_slice(b"HARDWARE TEST\n");
+    payload.extend_from_slice(&[0x1b, 0x45, 0x00]);
+    payload.extend_from_slice(&[0x1b, 0x61, 0x00]);
+    payload.extend_from_slice(b"================================\n");
+    payload.extend_from_slice(b"This is NOT a cash-out ticket.\n");
+    payload.extend_from_slice(b"Printer, USB and lp/USB permission OK.\n");
+    payload.extend_from_slice(b"================================\n");
+    payload.extend_from_slice(&[0x1b, 0x64, 0x04]);
+    payload.extend_from_slice(&[0x1d, 0x56, 0x41, 0x04]);
+    let path = resolve_device_path(&self.device_path).unwrap_or_else(|| self.device_path.clone());
+    write_raw(&path, &payload)?;
+    log::info!("test_slip_printed path={}", path);
+    Ok(true)
+  }
+}
+
+/// Path the printer driver would use (exists or writable).
+pub fn diagnose_printer_path(configured: &str) -> Option<String> {
+  resolve_device_path(configured)
 }
 
 fn printer_help_hint() -> &'static str {

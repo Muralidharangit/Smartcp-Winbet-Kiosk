@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import {
   billIn,
@@ -63,6 +63,9 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
   const [ready, setReady] = useState(false)
   const [hardwareBlocked, setHardwareBlocked] = useState(false)
   const [printerReady, setPrinterReady] = useState(false)
+  /** Ignore a second bill-in for the same note (StrictMode double listener / GBA escrow+stack). */
+  const lastBillInAt = useRef(0)
+  const lastBillInAmount = useRef<number | null>(null)
 
   useEffect(() => {
     setMachineId(terminal.machineId)
@@ -178,10 +181,20 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
 
   // Real bill acceptor events from Rust
   useEffect(() => {
+    let cancelled = false
     const unsubs: Array<() => void> = []
+
+    function keepUnlisten(unlisten: () => void) {
+      if (cancelled) {
+        unlisten()
+        return
+      }
+      unsubs.push(unlisten)
+    }
+
     void onNoteAccepted((payload) => {
       void acceptCash(payload.amount)
-    }).then((u) => unsubs.push(u))
+    }).then(keepUnlisten)
     void onNoteRejected((payload) => {
       const reason = payload.reason || ''
       const message = reason.startsWith('code_2')
@@ -192,7 +205,7 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
             ? 'This note type is not accepted on this machine.'
             : 'Note rejected. Please try another NAD bill.'
       showAlert({ tone: 'warn', title: 'Cash not accepted', message, autoCloseMs: 0 })
-    }).then((u) => unsubs.push(u))
+    }).then(keepUnlisten)
     void onHardwareError((payload) => {
       const err = (payload.error || '').toLowerCase()
       // Ignore missing serial/printer paths on lab machines (no cabinet attached).
@@ -210,8 +223,11 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         message: friendlyMessage(payload.error, `${payload.device} needs attention.`),
         autoCloseMs: 0,
       })
-    }).then((u) => unsubs.push(u))
-    return () => unsubs.forEach((u) => u())
+    }).then(keepUnlisten)
+    return () => {
+      cancelled = true
+      unsubs.forEach((u) => u())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminal.machineId])
 
@@ -235,6 +251,19 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
   }, [terminal.machineId])
 
   async function acceptCash(amount: number): Promise<boolean> {
+    if (useMachine.getState().installTestActive) {
+      return false
+    }
+    const now = Date.now()
+    if (
+      lastBillInAmount.current === amount &&
+      now - lastBillInAt.current < 2000
+    ) {
+      return false
+    }
+    lastBillInAmount.current = amount
+    lastBillInAt.current = now
+
     try {
       const hardwareId = await getLiveHardwareId()
       const result = await billIn(terminal.machineId, hardwareId, amount)
@@ -244,6 +273,8 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
       navigate('/cash-in')
       return true
     } catch (err) {
+      lastBillInAmount.current = null
+      lastBillInAt.current = 0
       if (isHardwareUnauthorized(err)) {
         setHardwareBlocked(true)
         return false
@@ -259,6 +290,9 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
   }
 
   async function redeemTicket(code: string): Promise<boolean> {
+    if (useMachine.getState().installTestActive) {
+      return false
+    }
     const barcode = code.trim().toUpperCase()
     if (!barcode) return false
     if (!(barcode.startsWith('T') || barcode.startsWith('TKT'))) {

@@ -10,6 +10,7 @@ import {
   type StoredTerminal,
 } from './lib/storage'
 import { StaffExitGate } from './components/StaffExitGate'
+import { HardwareTestGate } from './components/HardwareTestGate'
 import { ArenaApp } from './screens/ArenaApp'
 import { RegistrationScreen } from './screens/RegistrationScreen'
 import { RegistrationSuccessScreen } from './screens/RegistrationSuccessScreen'
@@ -55,6 +56,7 @@ export default function App() {
     return (
       <>
         <StaffExitGate />
+        <HardwareTestGate />
         <RegistrationSuccessScreen result={justRegistered} onContinue={handleContinueFromSuccess} />
       </>
     )
@@ -64,6 +66,7 @@ export default function App() {
     return (
       <>
         <StaffExitGate />
+        <HardwareTestGate />
         <div className="app-shell">
           <header className="top-bar">
             <div className="brand">Betwise Kiosk Setup</div>
@@ -80,6 +83,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <StaffExitGate />
+      <HardwareTestGate />
       <ArenaApp terminal={terminal} onUnauthorized={handleResetRegistration} />
     </BrowserRouter>
   )

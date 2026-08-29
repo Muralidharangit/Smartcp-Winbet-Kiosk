@@ -24,6 +24,7 @@ export type KioskHwConfig = {
   CoinAcceptor_Port: string
   Currency: string
   CurrencySymbol: string
+  AdminPassword?: string
 }
 
 export async function startHardware(): Promise<HardwareStatus | null> {
@@ -34,6 +35,32 @@ export async function startHardware(): Promise<HardwareStatus | null> {
 export async function fetchHardwareStatus(): Promise<HardwareStatus | null> {
   if (!isTauriApp()) return null
   return invoke<HardwareStatus>('hardware_status')
+}
+
+export type DiagnoseCheck = {
+  id: string
+  name: string
+  ok: boolean
+  detail: string
+}
+
+export type DiagnoseReport = {
+  os: string
+  user: string
+  groups: string[]
+  checks: DiagnoseCheck[]
+}
+
+export async function diagnoseHardware(): Promise<DiagnoseReport | null> {
+  if (!isTauriApp()) return null
+  return invoke<DiagnoseReport>('hardware_diagnose')
+}
+
+export async function printTestTicket(): Promise<void> {
+  if (!isTauriApp()) {
+    throw new Error('Printer only available in the kiosk app')
+  }
+  await invoke('print_test_ticket')
 }
 
 export async function fetchHwConfig(): Promise<KioskHwConfig | null> {

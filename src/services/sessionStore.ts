@@ -23,6 +23,8 @@ type MachineState = {
   statusMessage: Flash;
   alert: KioskAlertState;
   printerWarning: string | null;
+  /** Staff hardware test open — do not bill-in or ticket-in. */
+  installTestActive: boolean;
   setConfig: (c: KioskConfig) => void;
   setMachineId: (id: string) => void;
   setBalance: (balance: number) => void;
@@ -33,6 +35,7 @@ type MachineState = {
   showAlert: (alert: NonNullable<KioskAlertState>) => void;
   clearAlert: () => void;
   setPrinterWarning: (msg: string | null) => void;
+  setInstallTestActive: (active: boolean) => void;
 };
 
 export const useMachine = create<MachineState>((set) => ({
@@ -45,6 +48,7 @@ export const useMachine = create<MachineState>((set) => ({
   statusMessage: null,
   alert: null,
   printerWarning: null,
+  installTestActive: false,
   setConfig: (config) => set({ config }),
   setMachineId: (machineId) => set({ machineId }),
   setBalance: (balance) => set({ balance }),
@@ -55,4 +59,5 @@ export const useMachine = create<MachineState>((set) => ({
   showAlert: (alert) => set({ alert }),
   clearAlert: () => set({ alert: null }),
   setPrinterWarning: (printerWarning) => set({ printerWarning }),
+  setInstallTestActive: (installTestActive) => set({ installTestActive }),
 }));
