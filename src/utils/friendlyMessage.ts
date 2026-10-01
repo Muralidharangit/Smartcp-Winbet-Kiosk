@@ -21,8 +21,14 @@ export function friendlyMessage(err: unknown, fallback = 'Something went wrong. 
   if (lower.includes('printer not connected') || lower.includes('no writable printer')) {
     return 'Printer is not connected. Plug in the Epson printer, then try cash-out again.';
   }
+  if (lower.includes('too low to restore')) {
+    return 'Shop coins too low to restore ticket';
+  }
+  if (lower.includes('shop balance too low')) {
+    return 'Shop balance too low';
+  }
   if (lower.includes('could not print') || lower.includes('print failed') || lower.includes('print')) {
-    return 'Could not print the ticket. Credit stays on this machine — fix the printer and try again.';
+    return 'Cash-out cancelled';
   }
   if (lower.includes('insufficient')) {
     return 'Not enough credit for that bet.';

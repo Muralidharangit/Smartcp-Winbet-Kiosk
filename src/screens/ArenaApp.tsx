@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import {
   billIn,
@@ -10,9 +10,12 @@ import {
   ticketIn,
 } from '../api/client'
 import ArenaShell from '../components/ArenaShell'
+import { HardwareLabPanel } from '../components/HardwareLabPanel'
 import KioskAlert from '../components/KioskAlert'
 import { RequireCredit } from '../components/RequireCredit'
 import StatusToast from '../components/StatusToast'
+import { isHardwareSimulatorEnabled } from '../config/env'
+import { downloadDemoTicket } from '../lib/demoTicket'
 import { createBarcodeListener } from '../hardware/barcodeBridge'
 import {
   fetchHardwareStatus,
@@ -21,9 +24,11 @@ import {
   onNoteAccepted,
   onNoteRejected,
   printCashOutTicket,
+  setShopAvailableCoins,
   startHardware,
 } from '../lib/hardware'
 import { getLiveHardwareId, type StoredTerminal } from '../lib/storage'
+import { useTerminalRealtime } from '../lib/useTerminalRealtime'
 import { useMachine } from '../services/sessionStore'
 import { friendlyMessage } from '../utils/friendlyMessage'
 import CashInsertedScreen from './CashInsertedScreen'
@@ -31,8 +36,7 @@ import CashOutScreen from './CashOutScreen'
 import GamesLobby from './GamesLobby'
 import HomeScreen from './HomeScreen'
 import LuckyWheelGame from './games/LuckyWheelGame'
-import NeonSlotsGame from './games/NeonSlotsGame'
-import RedBlackGame from './games/RedBlackGame'
+import AviatorGame from './games/AviatorGame'
 import SplashScreen from './SplashScreen'
 import { UnauthorizedScreen } from './UnauthorizedScreen'
 
@@ -41,7 +45,6 @@ type Props = {
   onUnauthorized: () => void
 }
 
-const SESSION_MS = 5000
 const HEARTBEAT_MS = 60000
 
 export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
@@ -59,8 +62,13 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     config,
   } = useMachine()
   const [ready, setReady] = useState(false)
+  const [machineDbId, setMachineDbId] = useState<number | undefined>()
+  const [playerId, setPlayerId] = useState<number | null>(null)
   const [hardwareBlocked, setHardwareBlocked] = useState(false)
   const [printerReady, setPrinterReady] = useState(false)
+  /** Ignore a second bill-in for the same note (StrictMode double listener / GBA escrow+stack). */
+  const lastBillInAt = useRef(0)
+  const lastBillInAmount = useRef<number | null>(null)
 
   useEffect(() => {
     setMachineId(terminal.machineId)
@@ -139,7 +147,12 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         const hardwareId = await getLiveHardwareId()
         const session = await fetchSession(terminal.machineId, hardwareId)
         if (cancelled) return
+        setMachineDbId(session.id)
+        setPlayerId(session.player_id ?? null)
         setBalance(session.current_balance)
+        if (session.available_coins != null) {
+          void setShopAvailableCoins(session.available_coins)
+        }
         setHardwareBlocked(false)
         setReady(true)
       } catch (err) {
@@ -153,18 +166,48 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     }
 
     void sync()
-    const timer = window.setInterval(() => void sync(), SESSION_MS)
     return () => {
       cancelled = true
-      window.clearInterval(timer)
     }
   }, [terminal.machineId, setBalance])
+
+  useTerminalRealtime(
+    machineDbId,
+    terminal.machineId,
+    {
+      onConnected: () => undefined,
+      onApproved: (payload) => {
+        const next = Number(payload.current_balance)
+        setBalance(Number.isFinite(next) ? next : 0)
+      },
+      onRejected: () => undefined,
+      onLoadSuccess: (payload) => {
+        const next = Number(payload.current_balance)
+        if (Number.isFinite(next)) {
+          setBalance(next)
+        }
+        void getLiveHardwareId()
+          .then((hardwareId) => fetchSession(terminal.machineId, hardwareId))
+          .then((session) => {
+            setPlayerId(session.player_id ?? null)
+          })
+          .catch(() => undefined)
+      },
+      onPlayerBalance: (chips) => {
+        setBalance(chips)
+      },
+    },
+    playerId,
+  )
 
   useEffect(() => {
     async function heartbeat() {
       try {
         const hardwareId = await getLiveHardwareId()
-        await sendHeartbeat(terminal.machineId, hardwareId, 'ONLINE')
+        const beat = await sendHeartbeat(terminal.machineId, hardwareId, 'ONLINE')
+        if (beat.available_coins != null) {
+          void setShopAvailableCoins(beat.available_coins)
+        }
       } catch (err) {
         if (isHardwareUnauthorized(err)) setHardwareBlocked(true)
       }
@@ -176,21 +219,39 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
 
   // Real bill acceptor events from Rust
   useEffect(() => {
+    let cancelled = false
     const unsubs: Array<() => void> = []
+
+    function keepUnlisten(unlisten: () => void) {
+      if (cancelled) {
+        unlisten()
+        return
+      }
+      unsubs.push(unlisten)
+    }
+
     void onNoteAccepted((payload) => {
       void acceptCash(payload.amount)
-    }).then((u) => unsubs.push(u))
+    }).then(keepUnlisten)
     void onNoteRejected((payload) => {
       const reason = payload.reason || ''
-      const message = reason.startsWith('code_2')
-        ? 'This note was not recognised. Use a clean NAD 10 / 20 / 50 / 100 note.'
-        : reason.startsWith('code_3')
-          ? 'Note was rejected in the feeder. Insert flat, follow the arrow, and release.'
-          : reason.startsWith('code_4') || reason.startsWith('code_5')
-            ? 'This note type is not accepted on this machine.'
-            : 'Note rejected. Please try another NAD bill.'
-      showAlert({ tone: 'warn', title: 'Cash not accepted', message, autoCloseMs: 0 })
-    }).then((u) => unsubs.push(u))
+      const shopTooLow = reason === 'shop_balance_too_low'
+      const message = shopTooLow
+        ? 'Shop balance too low'
+        : reason.startsWith('code_2')
+          ? 'This note was not recognised. Use a clean NAD 10 / 20 / 50 / 100 note.'
+          : reason.startsWith('code_3')
+            ? 'Note was rejected in the feeder. Insert flat, follow the arrow, and release.'
+            : reason.startsWith('code_4') || reason.startsWith('code_5')
+              ? 'This note type is not accepted on this machine.'
+              : 'Note rejected. Please try another NAD bill.'
+      showAlert({
+        tone: shopTooLow ? 'error' : 'warn',
+        title: shopTooLow ? 'Shop balance too low' : 'Cash not accepted',
+        message,
+        autoCloseMs: 0,
+      })
+    }).then(keepUnlisten)
     void onHardwareError((payload) => {
       const err = (payload.error || '').toLowerCase()
       // Ignore missing serial/printer paths on lab machines (no cabinet attached).
@@ -208,8 +269,11 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         message: friendlyMessage(payload.error, `${payload.device} needs attention.`),
         autoCloseMs: 0,
       })
-    }).then((u) => unsubs.push(u))
-    return () => unsubs.forEach((u) => u())
+    }).then(keepUnlisten)
+    return () => {
+      cancelled = true
+      unsubs.forEach((u) => u())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminal.machineId])
 
@@ -232,31 +296,55 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminal.machineId])
 
-  async function acceptCash(amount: number) {
+  async function acceptCash(amount: number): Promise<boolean> {
+    if (useMachine.getState().installTestActive) {
+      return false
+    }
+    const now = Date.now()
+    if (
+      lastBillInAmount.current === amount &&
+      now - lastBillInAt.current < 2000
+    ) {
+      return false
+    }
+    lastBillInAmount.current = amount
+    lastBillInAt.current = now
+
     try {
       const hardwareId = await getLiveHardwareId()
       const result = await billIn(terminal.machineId, hardwareId, amount)
       setBalance(result.current_balance)
+      if (result.available_coins != null) {
+        void setShopAvailableCoins(result.available_coins)
+      }
       setLastCash(amount)
       setCreditSource('cash')
       navigate('/cash-in')
+      return true
     } catch (err) {
+      lastBillInAmount.current = null
+      lastBillInAt.current = 0
       if (isHardwareUnauthorized(err)) {
         setHardwareBlocked(true)
-        return
+        return false
       }
+      const cashMessage = friendlyMessage(err)
       showAlert({
         tone: 'error',
-        title: 'Cash not accepted',
-        message: friendlyMessage(err),
+        title: cashMessage === 'Shop balance too low' ? 'Shop balance too low' : 'Cash not accepted',
+        message: cashMessage,
         autoCloseMs: 0,
       })
+      return false
     }
   }
 
-  async function redeemTicket(code: string) {
+  async function redeemTicket(code: string): Promise<boolean> {
+    if (useMachine.getState().installTestActive) {
+      return false
+    }
     const barcode = code.trim().toUpperCase()
-    if (!barcode) return
+    if (!barcode) return false
     if (!(barcode.startsWith('T') || barcode.startsWith('TKT'))) {
       showAlert({
         tone: 'warn',
@@ -264,7 +352,7 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         message: 'That is not a credit ticket. Insert cash, or scan a cash-out ticket.',
         autoCloseMs: 0,
       })
-      return
+      return false
     }
     try {
       const hardwareId = await getLiveHardwareId()
@@ -274,21 +362,27 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
       setLastTicket(result.barcode)
       setCreditSource('ticket')
       navigate('/cash-in')
+      return true
     } catch (err) {
       if (isHardwareUnauthorized(err)) {
         setHardwareBlocked(true)
-        return
+        return false
       }
+      const ticketMessage = friendlyMessage(err)
       showAlert({
         tone: 'error',
-        title: 'Ticket not accepted',
-        message: friendlyMessage(err),
+        title: ticketMessage === 'Shop balance too low' ? 'Shop balance too low' : 'Ticket not accepted',
+        message: ticketMessage,
         autoCloseMs: 0,
       })
+      return false
     }
   }
 
-  async function cashOut() {
+  async function cashOut(opts?: { simulatePrintFail?: boolean }) {
+    const lab = isHardwareSimulatorEnabled()
+    const symbol = config?.CurrencySymbol ?? 'N$'
+
     if (balance <= 0) {
       showAlert({
         tone: 'warn',
@@ -296,30 +390,32 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         message: 'There is no credit to cash out. Insert cash or scan a ticket first.',
         autoCloseMs: 0,
       })
-      return
+      return null
     }
 
-    // Cash-out requires a live printer — same rule as Electron kiosk
-    try {
-      const hw = await fetchHardwareStatus()
-      if (!hw?.printer.connected) {
+    if (!lab) {
+      // Cash-out requires a live printer — same rule as Electron kiosk
+      try {
+        const hw = await fetchHardwareStatus()
+        if (!hw?.printer.connected) {
+          showAlert({
+            tone: 'error',
+            title: 'Printer required',
+            message:
+              'Connect the Epson printer (USB + 24V power) before cash-out. Your credit stays on this machine.',
+            autoCloseMs: 0,
+          })
+          return null
+        }
+      } catch {
         showAlert({
           tone: 'error',
           title: 'Printer required',
-          message:
-            'Connect the Epson printer (USB + 24V power) before cash-out. Your credit stays on this machine.',
+          message: 'Cannot reach the printer. Fix the printer connection, then try cash-out again.',
           autoCloseMs: 0,
         })
-        return
+        return null
       }
-    } catch {
-      showAlert({
-        tone: 'error',
-        title: 'Printer required',
-        message: 'Cannot reach the printer. Fix the printer connection, then try cash-out again.',
-        autoCloseMs: 0,
-      })
-      return
     }
 
     let issuedBarcode: string | null = null
@@ -330,40 +426,79 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
       setLastTicket(ticket.barcode)
       setLastCash(ticket.amount)
 
+      const demoTicket = {
+        barcode: ticket.barcode,
+        amount: ticket.amount,
+        currencySymbol: symbol,
+        kioskName: config?.Terminal_ID ?? terminal.pcName,
+        issuedAt: new Date().toLocaleString(),
+      }
+
+      async function restoreAfterPrintFail(barcode: string, printErr?: unknown) {
+        try {
+          const restored = await cancelCashOutTicket(terminal.machineId, hardwareId, barcode)
+          setBalance(restored.current_balance)
+          setLastTicket(null)
+          setPrinterWarning(null)
+          showAlert({
+            tone: 'error',
+            title: 'Cash-out cancelled',
+            message:
+              restored.message ||
+              friendlyMessage(
+                printErr,
+                'Could not print the ticket. Credit stays on this machine — fix the printer and try again.',
+              ),
+            autoCloseMs: 0,
+          })
+        } catch (restoreErr) {
+          const restoreMessage = friendlyMessage(restoreErr)
+          const blocked = restoreMessage.toLowerCase().includes('too low to restore')
+          setBalance(0)
+          setLastTicket(barcode)
+          setPrinterWarning(null)
+          showAlert({
+            tone: 'error',
+            title: blocked ? 'Shop coins too low to restore ticket' : 'Cash-out cancelled',
+            message: blocked
+              ? restoreMessage
+              : friendlyMessage(
+                  printErr ?? restoreErr,
+                  'Could not print the ticket. Credit may stay at 0 — ask the cashier.',
+                ),
+            autoCloseMs: 0,
+          })
+        }
+      }
+
+      if (lab && opts?.simulatePrintFail) {
+        await restoreAfterPrintFail(ticket.barcode)
+        return null
+      }
+
+      if (lab) {
+        downloadDemoTicket(demoTicket)
+        setBalance(0)
+        setPrinterWarning(null)
+        navigate('/cash-out')
+        return demoTicket
+      }
+
       try {
         await printCashOutTicket({
           code: ticket.barcode,
           amount: ticket.amount,
           currency: config?.Currency ?? 'NAD',
-          currencySymbol: config?.CurrencySymbol ?? 'N$',
+          currencySymbol: symbol,
           terminalId: config?.Terminal_ID ?? terminal.pcName,
         })
         setBalance(0)
         setPrinterWarning(null)
         navigate('/cash-out')
+        return demoTicket
       } catch (printErr) {
-        // Print failed → void ticket and put credit back (Electron behaviour)
-        try {
-          const restored = await cancelCashOutTicket(
-            terminal.machineId,
-            hardwareId,
-            ticket.barcode,
-          )
-          setBalance(restored.current_balance)
-          setLastTicket(null)
-          setPrinterWarning(null)
-        } catch {
-          setBalance(0)
-        }
-        showAlert({
-          tone: 'error',
-          title: 'Cash-out cancelled',
-          message: friendlyMessage(
-            printErr,
-            'Could not print the ticket. Credit stays on this machine — fix the printer and try again.',
-          ),
-          autoCloseMs: 0,
-        })
+        await restoreAfterPrintFail(ticket.barcode, printErr)
+        return null
       }
     } catch (err) {
       if (issuedBarcode) {
@@ -375,13 +510,35 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
             issuedBarcode,
           )
           setBalance(restored.current_balance)
-        } catch {
-          /* keep UI; staff can help */
+          setLastTicket(null)
+          setPrinterWarning(null)
+        } catch (restoreErr) {
+          const restoreMessage = friendlyMessage(restoreErr)
+          const blocked = restoreMessage.toLowerCase().includes('too low to restore')
+          setBalance(0)
+          setLastTicket(issuedBarcode)
+          setPrinterWarning(null)
+          showAlert({
+            tone: 'error',
+            title: blocked ? 'Shop coins too low to restore ticket' : 'Cash-out cancelled',
+            message: blocked
+              ? restoreMessage
+              : friendlyMessage(err, 'Could not print the ticket. Credit may stay at 0 — ask the cashier.'),
+            autoCloseMs: 0,
+          })
+          return null
         }
+        showAlert({
+          tone: 'error',
+          title: 'Cash-out cancelled',
+          message: friendlyMessage(err, 'Could not print the ticket. Credit stays on this machine.'),
+          autoCloseMs: 0,
+        })
+        return null
       }
       if (isHardwareUnauthorized(err)) {
         setHardwareBlocked(true)
-        return
+        return null
       }
       showAlert({
         tone: 'error',
@@ -389,6 +546,7 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         message: friendlyMessage(err),
         autoCloseMs: 0,
       })
+      return null
     }
   }
 
@@ -396,16 +554,15 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     return <UnauthorizedScreen />
   }
 
-  if (!ready) return <SplashScreen />
-
   const doCashOut = () => void cashOut()
+  const labEnabled = isHardwareSimulatorEnabled()
 
   function withArena(node: ReactNode, opts?: { creditPanel?: boolean }) {
     return (
       <ArenaShell
         onCashOut={doCashOut}
         showCreditPanel={opts?.creditPanel !== false}
-        printerReady={printerReady}
+        printerReady={printerReady || labEnabled}
       >
         {node}
       </ArenaShell>
@@ -416,10 +573,31 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     <div className="app-shell">
       <StatusToast />
       <KioskAlert />
+      <HardwareLabPanel
+        balance={balance}
+        currencySymbol={config?.CurrencySymbol ?? 'N$'}
+        kioskName={config?.Terminal_ID ?? terminal.pcName}
+        adminPassword={config?.AdminPassword ?? 'admin123'}
+        onBillIn={(amount) => acceptCash(amount)}
+        onTicketIn={(code) => redeemTicket(code)}
+        onCashOut={(simulatePrintFail) => cashOut({ simulatePrintFail })}
+      />
+      {!ready ? (
+        <SplashScreen />
+      ) : (
       <Routes>
         <Route path="/" element={<SplashScreen redirectTo="/home" />} />
         <Route path="/home" element={withArena(<HomeScreen />)} />
         <Route path="/play" element={withArena(<GamesLobby />)} />
+        <Route
+          path="/play/aviator"
+          element={withArena(
+            <RequireCredit>
+              <AviatorGame />
+            </RequireCredit>,
+            { creditPanel: false },
+          )}
+        />
         <Route
           path="/play/wheel"
           element={withArena(
@@ -429,28 +607,11 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
             { creditPanel: false },
           )}
         />
-        <Route
-          path="/play/slots"
-          element={withArena(
-            <RequireCredit>
-              <NeonSlotsGame />
-            </RequireCredit>,
-            { creditPanel: false },
-          )}
-        />
-        <Route
-          path="/play/redblack"
-          element={withArena(
-            <RequireCredit>
-              <RedBlackGame />
-            </RequireCredit>,
-            { creditPanel: false },
-          )}
-        />
         <Route path="/cash-in" element={withArena(<CashInsertedScreen />, { creditPanel: false })} />
         <Route path="/cash-out" element={withArena(<CashOutScreen />, { creditPanel: false })} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
+      )}
     </div>
   )
 }

@@ -5,7 +5,7 @@ use super::{emit_hardware_error, emit_note_accepted, emit_note_rejected, DeviceS
 use serialport::SerialPort;
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -13,6 +13,27 @@ use tauri::AppHandle;
 
 const BV_ADDR: u8 = 40;
 const HOST_ADDR: u8 = 1;
+
+/// Shop available coins in cents. u64::MAX = not yet loaded (allow notes).
+static SHOP_AVAILABLE_CENTS: AtomicU64 = AtomicU64::new(u64::MAX);
+
+pub fn set_shop_available_coins(amount: f64) {
+  let cents = if !amount.is_finite() || amount < 0.0 {
+    0
+  } else {
+    (amount * 100.0).round() as u64
+  };
+  SHOP_AVAILABLE_CENTS.store(cents, Ordering::Relaxed);
+}
+
+fn shop_available() -> f64 {
+  let cents = SHOP_AVAILABLE_CENTS.load(Ordering::Relaxed);
+  if cents == u64::MAX {
+    f64::MAX
+  } else {
+    cents as f64 / 100.0
+  }
+}
 
 fn default_channels() -> HashMap<u8, f64> {
   HashMap::from([
@@ -441,6 +462,12 @@ fn handle_event(state: &mut LiveState, result_a: u8, result_b: u8, app: &AppHand
   log::info!("bill_event a={result_a} b={result_b}");
   if result_a >= 1 {
     if result_b == 1 {
+      let amount = *state.channels.get(&result_a).unwrap_or(&(result_a as f64 * 10.0));
+      if amount > shop_available() + 0.001 {
+        write_cmd(state, 154, &[0]); // return escrow
+        emit_note_rejected(app, "shop_balance_too_low");
+        return;
+      }
       write_cmd(state, 154, &[1]); // stack escrow
       return;
     }

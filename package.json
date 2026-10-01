@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
+    "laravel-echo": "^2.5.0",
+    "pusher-js": "^8.6.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.2",

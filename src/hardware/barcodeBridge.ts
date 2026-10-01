@@ -14,7 +14,7 @@ export type WedgeOptions = {
 
 function createWedgeScanner(options: WedgeOptions) {
   const minLength = options.minLength ?? 4
-  const maxGapMs = options.maxGapMs ?? 220
+  const maxGapMs = options.maxGapMs ?? 400
   const idleGapMs = options.idleGapMs ?? 600
   const idleAfterMs = options.idleAfterMs ?? 3000
 
@@ -109,6 +109,8 @@ export function createBarcodeListener(
   })
 
   const handler = (e: KeyboardEvent) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return
+
     const target = e.target as HTMLElement | null
     if (
       target &&
