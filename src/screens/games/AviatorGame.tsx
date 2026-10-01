@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { fetchSession } from '../../api/client'
 import { ProviderGamePanel } from '../../components/ProviderGamePanel'
+import { getGameById } from '../../games/catalog'
 import { getLiveHardwareId } from '../../lib/storage'
 import { useMachine } from '../../services/sessionStore'
 import { friendlyMessage } from '../../utils/friendlyMessage'
@@ -8,6 +9,7 @@ import { friendlyMessage } from '../../utils/friendlyMessage'
 export default function AviatorGame() {
   const navigate = useNavigate()
   const { machineId, balance, setBalance, showAlert } = useMachine()
+  const game = getGameById('aviator')
 
   async function refreshBalance() {
     if (!machineId) return
@@ -20,12 +22,14 @@ export default function AviatorGame() {
     }
   }
 
+  if (!game) return null
+
   return (
     <ProviderGamePanel
-      gameId="aviator"
-      gameName="Aviator"
+      game={game}
       machineId={machineId}
       balance={balance}
+      disabled={balance <= 0}
       getHardwareId={getLiveHardwareId}
       onBack={() => navigate('/home')}
       onClosed={() => void refreshBalance()}

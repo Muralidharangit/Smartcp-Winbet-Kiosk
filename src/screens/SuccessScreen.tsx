@@ -13,7 +13,7 @@ export function SuccessScreen({ message, siteName, pcName }: Props) {
         <p style={{ textAlign: 'center' }}>Opening betting platform…</p>
 
         <div className="detail-row">
-          <span>Site</span>
+          <span>Shop</span>
           <span>{siteName}</span>
         </div>
         <div className="detail-row">

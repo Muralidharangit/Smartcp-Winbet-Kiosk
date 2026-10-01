@@ -1425,6 +1425,34 @@ body {
     'footer footer';
 }
 
+.arena.arena--shop {
+  grid-template-columns: 1fr;
+  grid-template-rows: 64px 1fr;
+  grid-template-areas:
+    'header'
+    'main';
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.arena.arena--shop .arena-header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.arena.arena--shop .arena-brand strong {
+  color: #0f172a;
+}
+
+.arena.arena--shop .arena-main {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  padding: 12px 16px 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .arena-header {
   grid-area: header;
   display: flex;

@@ -1133,3 +1133,764 @@ input {
   margin-top: 8px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.header-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  min-width: 6.5rem;
+}
+
+.header-balance span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a3412;
+}
+
+.header-balance strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #b45309;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.header-insert,
+.header-cashout {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.header-insert {
+  color: #92400e;
+  background: #fde68a;
+}
+
+.header-insert.is-pulse {
+  animation: header-insert-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes header-insert-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(253, 230, 138, 0.45);
+  }
+}
+
+.header-cashout {
+  color: #fff;
+  background: linear-gradient(135deg, #ff4d4d, #dc2626 45%, #991b1b);
+}
+
+.header-cashout:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.station-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  min-width: 8rem;
+}
+
+.station-badge-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.station-badge-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.arena-clock-lite {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.arena-shop-lobby {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.play-error-banner {
+  flex-shrink: 0;
+  margin-bottom: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.game-lobby {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-lobby-light {
+  gap: 0.75rem;
+}
+
+.lobby-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.3rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+}
+
+.lobby-tab {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.7rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lobby-tab.is-active {
+  background: #fff;
+  color: #e11d48;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.lobby-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.lobby-pane-play {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lobby-pane-play > .casino-table,
+.lobby-pane-play > .provider-game-panel {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  border-radius: 0.85rem;
+}
+
+.lobby-header {
+  margin-bottom: 0.55rem;
+  flex-shrink: 0;
+}
+
+.lobby-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lobby-back {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.game-lobby-light .lobby-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.15rem;
+}
+
+.lobby-empty {
+  margin: 1rem 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.lobby-status-banner {
+  flex-shrink: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 600;
+}
+
+.game-lobby-light .lobby-status-banner.is-cashout {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.game-lobby-light .lobby-status-banner.is-offline {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 1rem;
+}
+
+.game-grid-assigned {
+  flex: 0 0 auto;
+  min-height: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  align-content: start;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.game-grid-assigned .game-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+.lobby-scroll-sentinel {
+  height: 1px;
+  flex-shrink: 0;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.game-card-touch:focus-visible {
+  outline: 3px solid #fde68a;
+  outline-offset: 3px;
+}
+
+.game-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: #fda4af;
+  box-shadow: 0 12px 24px rgba(225, 29, 72, 0.12);
+}
+
+.game-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+.game-lobby-disabled .game-card-play-orb {
+  display: none;
+}
+
+.game-card-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 11rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--game-accent, #ef4444) 55%, transparent), transparent 55%),
+    linear-gradient(165deg, var(--art-from, #1f1f23) 0%, var(--art-to, #0c0c10) 100%);
+}
+
+.game-lobby-light .game-grid-assigned .game-card-art {
+  flex: none;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 10;
+}
+
+.game-card-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-card-ribbon {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #111;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+
+.game-card-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--game-accent, #ef4444) 40%, transparent), transparent 60%);
+  opacity: 0.5;
+}
+
+.game-card-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.game-card-play-orb {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.game-card:hover:not(:disabled) .game-card-play-orb {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.game-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.65rem 0.65rem;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.game-card-category {
+  color: #e11d48;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.game-card-name {
+  color: #0f172a;
+  font-size: 0.82rem;
+}
+
+.provider-card {
+  padding: 0;
+  align-items: stretch;
+  text-align: left;
+}
+
+.provider-card .game-card-art {
+  background: #f8fafc;
+}
+
+.provider-card-logo-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0.65rem;
+}
+
+.provider-card-dark .game-card-art {
+  background: #111827;
+}
+
+.provider-card-logo {
+  max-width: 80%;
+  max-height: 52%;
+  object-fit: contain;
+}
+
+.exit-game-btn {
+  flex-shrink: 0;
+  min-height: 2.75rem;
+  min-width: 7.5rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.exit-game-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.casino-table {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.casino-table-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.casino-table-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-align: center;
+  flex: 1;
+}
+
+.casino-table-title strong {
+  font-size: 1.25rem;
+}
+
+.casino-table-title span,
+.casino-stage-hint,
+.casino-result-round {
+  color: #94a3b8;
+}
+
+.casino-balance-chip {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  white-space: nowrap;
+}
+
+.casino-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--game-accent, #ef4444) 35%, transparent), transparent 55%),
+    linear-gradient(160deg, var(--art-from, #1f2937), var(--art-to, #020617));
+}
+
+.casino-stage-ring {
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  border-radius: 999px;
+  border: 3px solid color-mix(in srgb, var(--game-accent, #ef4444) 55%, white 10%);
+  opacity: 0.7;
+}
+
+.casino-stage.is-spinning .casino-stage-ring {
+  animation: stage-spin 0.7s linear infinite;
+}
+
+@keyframes stage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.casino-stage-core {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.casino-stage-value {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.casino-result {
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.casino-result.win {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.28), rgba(6, 78, 59, 0.35));
+}
+
+.casino-result.loss {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.4));
+}
+
+.casino-result-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.casino-result-msg {
+  margin: 0.25rem 0 0;
+  color: #e2e8f0;
+}
+
+.casino-stake-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b45309;
+  text-align: center;
+}
+
+.casino-stake-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.casino-chip {
+  min-width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 999px;
+  border: 3px dashed rgba(148, 163, 184, 0.55);
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.casino-chip.active {
+  border-color: #f59e0b;
+  background: #fde68a;
+}
+
+.casino-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.65rem;
+}
+
+.casino-choice {
+  padding: 0.95rem 0.6rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.casino-choice.choice-red {
+  background: linear-gradient(160deg, #dc2626, #7f1d1d);
+  color: #fff;
+}
+
+.casino-choice.choice-black {
+  background: linear-gradient(160deg, #1e293b, #020617);
+  color: #fff;
+}
+
+.bet-hint {
+  text-align: center;
+  color: #9a3412;
+}
+
+.arena.arena--shop .provider-game-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 1200px) {
+  .game-grid-assigned {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .lobby-tab {
+    font-size: 0.78rem;
+    padding: 0.6rem 0.35rem;
+  }
+
+  .game-grid-assigned {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+html.shop-light,
+html.shop-light body,
+html.shop-light #root,
+body.shop-light {
+  color-scheme: light;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.arena.arena--shop,
+.arena.arena--shop .arena-main,
+.arena.arena--shop .lobby-header h3,
+.arena.arena--shop .game-card,
+.arena.arena--shop .game-card-name,
+.arena.arena--shop .kx-gamepage h1,
+.arena.arena--shop .kx-lobby-credit strong,
+.arena.arena--shop .kx-betstrip-label strong {
+  color: #0f172a;
+}
+
+.arena.arena--shop .lobby-tab {
+  color: #475569;
+}
+
+.arena.arena--shop .lobby-tab.is-active {
+  color: #e11d48;
+  background: #fff;
+}
+
+.arena.arena--shop .lobby-back,
+.arena.arena--shop .kx-btn-ghost {
+  color: #1e293b;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+
+.arena.arena--shop .lobby-empty,
+.arena.arena--shop .kx-sub,
+.arena.arena--shop .kx-lobby-credit span,
+.arena.arena--shop .muted {
+  color: #475569;
+}
+
+.arena.arena--shop .game-lobby .game-card {
+  min-height: 0;
+  padding: 0;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+}
+
+.arena.arena--shop .game-lobby .game-card p {
+  color: #64748b;
+}
+
+.arena.arena--shop .game-card-category {
+  color: #e11d48;
+}
+
+.arena.arena--shop .header-cashout,
+.arena.arena--shop .exit-game-btn,
+.arena.arena--shop .casino-choice.choice-red,
+.arena.arena--shop .casino-choice.choice-black,
+.arena.arena--shop .provider-game-title,
+.arena.arena--shop .provider-game-title strong,
+.arena.arena--shop .provider-game-balance {
+  color: #f8fafc;
+}
+
+.arena.arena--shop .header-insert {
+  color: #92400e;
+}
+
+.arena.arena--shop .header-balance,
+.arena.arena--shop .header-balance span {
+  color: #9a3412;
+}
+
+.arena.arena--shop .header-balance strong {
+  color: #b45309;
+}
+
+.arena.arena--shop .station-badge-label,
+.arena.arena--shop .arena-clock-lite {
+  color: #64748b;
+}
+
+.arena.arena--shop .station-badge-name {
+  color: #0f172a;
+}
+
+.kx-alert h2 {
+  color: #f7f4ef;
+}
+

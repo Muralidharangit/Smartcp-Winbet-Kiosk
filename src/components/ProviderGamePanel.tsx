@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatCurrency, launchProviderGame } from '../api/client'
+import type { GameDefinition } from '../games/catalog'
 
 type Props = {
-  gameId: string
-  gameName: string
+  game: GameDefinition
   machineId: string
   balance: number
+  disabled: boolean
   onBack: () => void
   onError: (message: string) => void
   onClosed: () => void
@@ -13,10 +14,10 @@ type Props = {
 }
 
 export function ProviderGamePanel({
-  gameId,
-  gameName,
+  game,
   machineId,
   balance,
+  disabled,
   onBack,
   onError,
   onClosed,
@@ -39,8 +40,11 @@ export function ProviderGamePanel({
       setLoading(true)
       setGameUrl(null)
       try {
+        if (disabled) {
+          throw new Error('Terminal is offline or cash-out is pending.')
+        }
         const hardwareId = await getHardwareIdRef.current()
-        const result = await launchProviderGame(machineId, hardwareId, gameId)
+        const result = await launchProviderGame(machineId, hardwareId, game.id)
         if (cancelled) return
         setGameUrl(result.game_url)
       } catch (err) {
@@ -56,7 +60,7 @@ export function ProviderGamePanel({
     return () => {
       cancelled = true
     }
-  }, [gameId, machineId])
+  }, [game.id, machineId, disabled])
 
   function handleExit() {
     onClosed()
@@ -66,11 +70,11 @@ export function ProviderGamePanel({
   return (
     <div className="provider-game-panel">
       <div className="provider-game-toolbar">
-        <button type="button" className="kx-btn kx-btn-ghost kx-btn-sm" onClick={handleExit}>
+        <button type="button" className="exit-game-btn" onClick={handleExit}>
           ← Exit game
         </button>
         <div className="provider-game-title">
-          <strong>{gameName}</strong>
+          <strong>{game.name}</strong>
           <span>Live</span>
         </div>
         <div className="provider-game-balance">Bal {formatCurrency(balance)}</div>
@@ -78,16 +82,16 @@ export function ProviderGamePanel({
 
       {loading ? (
         <div className="provider-game-loading">
-          <div className="provider-spinner" aria-hidden />
-          <p>Launching {gameName}…</p>
+          <div className="provider-spinner" aria-hidden="true" />
+          <p>Launching {game.name}…</p>
         </div>
       ) : gameUrl ? (
         <iframe
           className="provider-game-frame"
-          title={gameName}
+          title={game.name}
           src={gameUrl}
-          allow="autoplay; fullscreen; payment"
-          referrerPolicy="no-referrer-when-downgrade"
+          allow="autoplay; fullscreen; payment; clipboard-read; clipboard-write"
+          allowFullScreen
         />
       ) : null}
     </div>

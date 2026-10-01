@@ -20,7 +20,7 @@ export default function CashOutScreen() {
             {symbol}
             {amount.toFixed(2)}
           </p>
-          <p className="muted">Take the printed ticket. Scan it on any kiosk to restore this credit.</p>
+          <p className="muted">Take the printed ticket. Scan it on a Terminal in this shop, or take it to the cashier.</p>
 
           <div className="kx-ticket-panel">
             <span className="kx-ticket-label">Ticket number</span>

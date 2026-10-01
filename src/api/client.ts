@@ -1,4 +1,4 @@
-import { getKioskApiBaseUrl, getPortalSlug, setPortalSlug, API_ORIGIN } from '../config/env'
+import { getPortalSlug, getShopApiBaseUrl, setPortalSlug, API_ORIGIN } from '../config/env'
 import { loadTerminal } from '../lib/storage'
 
 function resolvePortalSlug(explicit?: string): string {
@@ -15,7 +15,7 @@ function resolvePortalSlug(explicit?: string): string {
 }
 
 function apiBase(portalSlug?: string): string {
-  return getKioskApiBaseUrl(resolvePortalSlug(portalSlug))
+  return getShopApiBaseUrl(resolvePortalSlug(portalSlug))
 }
 
 export type TerminalRegistration = {
@@ -31,6 +31,8 @@ export type TerminalRegistration = {
 }
 
 export type TerminalSession = {
+  id?: number
+  player_id?: number | null
   machine_id: string
   hostname: string
   pc_name: string
@@ -39,10 +41,18 @@ export type TerminalSession = {
   status: string
   current_balance: number
   loaded_amount: number
+  available_coins?: number
   portal_slug?: string
 }
 
-type ApiSuccess<T> = { success: true; data: T; message?: string }
+type Pagination = {
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+}
+
+type ApiSuccess<T> = { success: true; data: T; message?: string; pagination?: Pagination }
 type ApiError = {
   success: false
   message: string
@@ -128,7 +138,7 @@ export async function registerTerminal(input: {
   const portalSlug = input.portal_slug.trim()
   setPortalSlug(portalSlug)
 
-  const response = await fetch(`${apiBase(portalSlug)}/kiosks/register`, {
+  const response = await fetch(`${getShopApiBaseUrl(portalSlug)}/terminals/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -168,7 +178,7 @@ export async function fetchSession(
     machine_id: machineId,
     device_fingerprint: hardwareId,
   })
-  const response = await fetch(`${apiBase()}/kiosks/session?${params}`, {
+  const response = await fetch(`${apiBase()}/terminals/session?${params}`, {
     headers: { Accept: 'application/json' },
   })
 
@@ -196,8 +206,8 @@ export async function sendHeartbeat(
   machineId: string,
   hardwareId: string,
   status: 'ONLINE' | 'OFFLINE',
-): Promise<void> {
-  const response = await fetch(`${apiBase()}/kiosks/heartbeat`, {
+): Promise<{ available_coins?: number }> {
+  const response = await fetch(`${apiBase()}/terminals/heartbeat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -207,10 +217,11 @@ export async function sendHeartbeat(
     }),
   })
 
-  const body = await parseJson<ApiSuccess<{ portal_slug?: string }>>(response)
+  const body = await parseJson<ApiSuccess<{ portal_slug?: string; available_coins?: number }>>(response)
   if (body.data?.portal_slug) {
     setPortalSlug(body.data.portal_slug)
   }
+  return body.data ?? {}
 }
 
 export type BetResult = {
@@ -238,6 +249,95 @@ export type GameCatalogItem = {
   choices: string[]
   kind?: 'local' | 'provider'
   provider?: string
+  image?: string | null
+  provider_image?: string | null
+  uuid?: string
+}
+
+export type GamesPage = {
+  items: GameCatalogItem[]
+  pagination: Pagination
+}
+
+export async function fetchGames(input: {
+  provider?: string
+  page?: number
+  limit?: number
+} = {}): Promise<GamesPage> {
+  const page = input.page ?? 1
+  const limit = input.limit ?? 50
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+  if (input.provider) {
+    params.set('provider', input.provider)
+  }
+  const response = await fetch(`${apiBase()}/terminals/games?${params}`, {
+    headers: { Accept: 'application/json' },
+  })
+  const body = await parseJson<ApiSuccess<GameCatalogItem[]> | ApiError>(response)
+  if (!body.success) {
+    throw new TerminalApiError(body.message, response.status)
+  }
+  const items = body.data ?? []
+  return {
+    items,
+    pagination: body.pagination ?? {
+      current_page: page,
+      last_page: 1,
+      per_page: limit,
+      total: items.length,
+    },
+  }
+}
+
+export type ShopProviderItem = {
+  id: number
+  provider: string
+  game_count: number
+  images?: {
+    logo?: string | null
+    name?: string | null
+    logo_name?: string | null
+  }
+}
+
+export async function fetchProviders(page = 1): Promise<ShopProviderItem[]> {
+  const response = await fetch(`${apiBase()}/terminals/providers?page=${page}&limit=50`, {
+    headers: { Accept: 'application/json' },
+  })
+  if (response.status === 404) {
+    return deriveProvidersFromGames()
+  }
+  const body = await parseJson<ApiSuccess<ShopProviderItem[]> | ApiError>(response)
+  if (!body.success) {
+    throw new TerminalApiError(body.message, response.status)
+  }
+  return body.data
+}
+
+async function deriveProvidersFromGames(): Promise<ShopProviderItem[]> {
+  const result = await fetchGames({ page: 1, limit: 200 })
+  const grouped = new Map<string, ShopProviderItem>()
+  for (const game of result.items) {
+    if (game.kind === 'local') continue
+    const name = game.provider?.trim()
+    if (!name) continue
+    const current = grouped.get(name)
+    if (current) {
+      current.game_count += 1
+      continue
+    }
+    grouped.set(name, {
+      id: grouped.size + 1,
+      provider: name,
+      game_count: 1,
+      images: {
+        logo: game.provider_image ?? null,
+        name: null,
+        logo_name: null,
+      },
+    })
+  }
+  return [...grouped.values()]
 }
 
 export type ProviderLaunchResult = {
@@ -248,24 +348,13 @@ export type ProviderLaunchResult = {
   player_id: number
 }
 
-export async function fetchGames(): Promise<GameCatalogItem[]> {
-  const response = await fetch(`${apiBase()}/kiosks/games`, {
-    headers: { Accept: 'application/json' },
-  })
-  const body = await parseJson<ApiSuccess<GameCatalogItem[]> | ApiError>(response)
-  if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
-  }
-  return body.data
-}
-
 export async function launchProviderGame(
   machineId: string,
   hardwareId: string,
   game: string,
 ): Promise<ProviderLaunchResult> {
-  const returnUrl = `${API_ORIGIN.replace(/\/api$/, '')}/terminal-return`
-  const response = await fetch(`${apiBase()}/kiosks/launch-game`, {
+  const returnUrl = typeof window !== 'undefined' ? window.location.origin : `${API_ORIGIN.replace(/\/api$/, '')}/terminal-return`
+  const response = await fetch(`${apiBase()}/terminals/launch-game`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -290,7 +379,7 @@ export async function placeBet(
   choice: string,
   stake: number,
 ): Promise<BetResult> {
-  const response = await fetch(`${apiBase()}/kiosks/place-bet`, {
+  const response = await fetch(`${apiBase()}/terminals/place-bet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -314,6 +403,7 @@ export type BillInResult = {
   amount: number
   current_balance: number
   status: string
+  available_coins?: number
 }
 
 export type CashOutTicketResult = {
@@ -339,7 +429,7 @@ export async function billIn(
   hardwareId: string,
   amount: number,
 ): Promise<BillInResult> {
-  const response = await fetch(`${apiBase()}/kiosks/bill-in`, {
+  const response = await fetch(`${apiBase()}/terminals/bill-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -361,7 +451,7 @@ export async function cashOutTicket(
   machineId: string,
   hardwareId: string,
 ): Promise<CashOutTicketResult> {
-  const response = await fetch(`${apiBase()}/kiosks/cashout-ticket`, {
+  const response = await fetch(`${apiBase()}/terminals/cashout-ticket`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -383,7 +473,7 @@ export async function cancelCashOutTicket(
   hardwareId: string,
   barcode: string,
 ): Promise<{ barcode: string; amount: number; current_balance: number; message: string }> {
-  const response = await fetch(`${apiBase()}/kiosks/cashout-ticket/cancel`, {
+  const response = await fetch(`${apiBase()}/terminals/cashout-ticket/cancel`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -409,7 +499,7 @@ export async function ticketIn(
   hardwareId: string,
   barcode: string,
 ): Promise<TicketInResult> {
-  const response = await fetch(`${apiBase()}/kiosks/ticket-in`, {
+  const response = await fetch(`${apiBase()}/terminals/ticket-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
@@ -439,7 +529,7 @@ export async function creditAdjust(
   delta: number,
   remarks = '',
 ): Promise<CreditAdjustResult> {
-  const response = await fetch(`${apiBase()}/kiosks/credit-adjust`, {
+  const response = await fetch(`${apiBase()}/terminals/credit-adjust`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({

@@ -1,4 +1,4 @@
-/** API config for the Tauri kiosk — set in `kiosk/Kiosk-tauri/.env` before build. */
+/** API config for the Terminal cabinet — set in `test-machines/terminal/.env` before build. */
 
 /** iccpanel API root including `/api` (no portal slug). Example: http://127.0.0.1:8000/api */
 export const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api').replace(/\/$/, '')
@@ -29,22 +29,28 @@ export function clearPortalSlug(): void {
   sessionStorage.removeItem(PORTAL_SLUG_KEY)
 }
 
-/** Full kiosk API base: /api/v1/{portal_slug}/kiosk */
-export function getKioskApiBaseUrl(portalSlug = getPortalSlug()): string {
+/** Full shop API base: /api/v1/{portal_slug}/shop */
+export function getShopApiBaseUrl(portalSlug = getPortalSlug()): string {
   const slug = portalSlug.trim()
   if (!slug) {
-    return `${API_ORIGIN}/v1/_unset_/kiosk`
+    return `${API_ORIGIN}/v1/_unset_/shop`
   }
-  return `${API_ORIGIN}/v1/${encodeURIComponent(slug)}/kiosk`
+  return `${API_ORIGIN}/v1/${encodeURIComponent(slug)}/shop`
 }
 
-/** @deprecated use getKioskApiBaseUrl — kept for older imports */
-export const API_BASE_URL = getKioskApiBaseUrl()
+export const API_BASE_URL = getShopApiBaseUrl()
 
 /**
  * Demo hardware overlay (Ctrl+Shift+H). Set `VITE_HW_SIMULATOR=true` in `.env`.
  * Must be off for production cabinet builds.
  */
+export const PUSHER_APP_KEY = (import.meta.env.VITE_PUSHER_APP_KEY as string | undefined)?.trim() ?? ''
+export const PUSHER_APP_CLUSTER = (import.meta.env.VITE_PUSHER_APP_CLUSTER as string | undefined)?.trim() || 'ap2'
+
+export function isTerminalRealtimeEnabled(): boolean {
+  return PUSHER_APP_KEY.length > 0
+}
+
 export function isHardwareSimulatorEnabled(): boolean {
   const raw = (import.meta.env.VITE_HW_SIMULATOR as string | undefined)?.trim().toLowerCase()
   return raw === 'true' || raw === '1' || raw === 'yes'

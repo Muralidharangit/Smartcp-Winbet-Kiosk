@@ -3,7 +3,7 @@ mod kiosk_lock;
 
 use hardware::{
   get_kiosk_hw_config, hardware_diagnose, hardware_start, hardware_status, print_cashout_ticket,
-  print_test_ticket, HardwareState,
+  print_test_ticket, set_shop_available_coins, HardwareState,
 };
 use kiosk_lock::{enter_kiosk_mode, exit_kiosk_mode};
 
@@ -18,6 +18,7 @@ pub fn run() {
       hardware_status,
       hardware_diagnose,
       get_kiosk_hw_config,
+      set_shop_available_coins,
       print_cashout_ticket,
       print_test_ticket,
       enter_kiosk_mode,

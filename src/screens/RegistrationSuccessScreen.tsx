@@ -18,11 +18,11 @@ export function RegistrationSuccessScreen({ result, onContinue }: Props) {
             ✓
           </div>
           <h1>Registration successful</h1>
-          <p className="success-lead">This Kiosk is now linked to your site and ready for betting.</p>
+          <p className="success-lead">This Kiosk is now linked to your shop and ready for betting.</p>
 
           <dl className="success-details">
             <div className="success-detail-row">
-              <dt>Site name</dt>
+              <dt>Shop name</dt>
               <dd>{result.site_name}</dd>
             </div>
             <div className="success-detail-row">

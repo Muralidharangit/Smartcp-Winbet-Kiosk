@@ -68,6 +68,11 @@ export async function fetchHwConfig(): Promise<KioskHwConfig | null> {
   return invoke<KioskHwConfig>('get_kiosk_hw_config')
 }
 
+export async function setShopAvailableCoins(amount: number): Promise<void> {
+  if (!isTauriApp()) return
+  await invoke('set_shop_available_coins', { amount })
+}
+
 export async function printCashOutTicket(ticket: {
   code: string
   amount: number

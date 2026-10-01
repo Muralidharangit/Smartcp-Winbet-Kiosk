@@ -84,7 +84,9 @@ export function HardwareLabPanel({
         setStatus('Failed — see the kiosk alert')
       } else if (result && typeof result === 'object' && result.barcode) {
         setHistory((prev) => [result, ...prev.filter((t) => t.barcode !== result.barcode)].slice(0, 8))
-        setStatus(printFail ? 'Print failed — credit restored' : `Ticket ${result.barcode}`)
+        setStatus(`Ticket ${result.barcode}`)
+      } else if (printFail && result == null) {
+        setStatus('Print fail — see kiosk alert')
       } else {
         setStatus(label)
       }

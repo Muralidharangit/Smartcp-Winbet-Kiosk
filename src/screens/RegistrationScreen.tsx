@@ -3,8 +3,8 @@ import { registerTerminal, type TerminalRegistration } from '../api/client'
 import {
   API_ORIGIN,
   DEFAULT_PORTAL_SLUG,
-  getKioskApiBaseUrl,
   getPortalSlug,
+  getShopApiBaseUrl,
 } from '../config/env'
 import { getLiveHardwareId, getOperatingSystem } from '../lib/storage'
 
@@ -49,8 +49,8 @@ export function RegistrationScreen({ onRegistered }: Props) {
         lower.includes('network request failed')
       ) {
         setError(
-          `Cannot reach the API at ${getKioskApiBaseUrl(slug)}. ` +
-            `On the site PC, open ${API_ORIGIN} in a browser. ` +
+          `Cannot reach the API at ${getShopApiBaseUrl(slug)}. ` +
+            `On the shop PC, open ${API_ORIGIN} in a browser. ` +
             `If the browser works but this app fails, rebuild the Tauri app with production .env AND update connect-src in tauri.conf.json (CSP blocks external URLs).`,
         )
       } else {
@@ -66,8 +66,8 @@ export function RegistrationScreen({ onRegistered }: Props) {
       <form className="card" onSubmit={handleSubmit}>
         <h1>Register Kiosk</h1>
         <p>
-          Enter the portal slug and the 19-character registration token from the portal. Site name, terminal name, and machine ID
-          are assigned automatically from the next available terminal slot Master created for this site.
+          Enter the portal slug and the 19-character registration token from the portal. Shop name, terminal name, and machine ID
+          are assigned automatically from the next available terminal slot Master created for this shop.
         </p>
 
         {error ? <div className="error-text">{error}</div> : null}
@@ -108,7 +108,7 @@ export function RegistrationScreen({ onRegistered }: Props) {
         </button>
 
         <p className="muted" style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.85rem' }}>
-          API: {getKioskApiBaseUrl(portalSlug)}
+          API: {getShopApiBaseUrl(portalSlug)}
         </p>
       </form>
     </div>

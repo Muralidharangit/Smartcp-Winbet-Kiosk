@@ -108,6 +108,11 @@ pub fn get_kiosk_hw_config(state: State<'_, HardwareState>) -> Result<KioskHwCon
   Ok(state.config.lock().map_err(|e| e.to_string())?.clone())
 }
 
+#[tauri::command]
+pub fn set_shop_available_coins(amount: f64) {
+  bill_acceptor::set_shop_available_coins(amount);
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PrintTicketInput {
   pub code: String,
