@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchGames, fetchProviders } from '../api/client'
+import { fetchGames, fetchProviders, type GameCatalogItem } from '../api/client'
 import {
   hydrateCatalogGame,
   lobbyProviderFromApi,
@@ -8,11 +8,15 @@ import {
 } from '../games/catalog'
 
 const PAGE_SIZE = 50
+const MAX_GAMES_LIMIT = 200
 
-function mapAssigned(items: { kind?: 'local' | 'provider' }[]) {
+function mapAssigned(items: GameCatalogItem[], isAllGames = false) {
   return items
-    .filter((game) => game.kind !== 'local')
-    .map((game) => hydrateCatalogGame(game as Parameters<typeof hydrateCatalogGame>[0]))
+    .filter((game) => {
+      if (isAllGames) return true // All Games may include kind: "local", provider dummyGame
+      return game.kind !== 'local' // Specific provider tab filters out non-provider local games
+    })
+    .map((game) => hydrateCatalogGame(game))
 }
 
 export function useShopProviders() {
@@ -36,7 +40,8 @@ export function useShopProviders() {
   useEffect(() => {
     let cancelled = false
 
-    fetchProviders()
+    // Fetch shop providers up to max 100
+    fetchProviders(1, 100)
       .then((items) => {
         if (cancelled) return
         setProviders(items.map(lobbyProviderFromApi))
@@ -67,11 +72,15 @@ export function useShopProviders() {
     setGamesError(null)
     try {
       const result = await fetchGames({ provider: providerName, page, limit: PAGE_SIZE })
-      const mapped = mapAssigned(result.items)
-      setGamesByProvider((current) => ({
-        ...current,
-        [providerName]: page === 1 ? mapped : [...(current[providerName] ?? []), ...mapped],
-      }))
+      const mapped = mapAssigned(result.items, false)
+      setGamesByProvider((current) => {
+        const prev = current[providerName] ?? []
+        const combined = page === 1 ? mapped : [...prev, ...mapped]
+        return {
+          ...current,
+          [providerName]: combined.slice(0, MAX_GAMES_LIMIT),
+        }
+      })
       setProviderPage((current) => ({
         ...current,
         [providerName]: {
@@ -91,10 +100,18 @@ export function useShopProviders() {
   const loadMoreProviderGames = useCallback(
     (providerName: string) => {
       const meta = providerPage[providerName]
-      if (!meta || gamesLoading || gamesLoadingMore || meta.page >= meta.lastPage) return
+      const currentList = gamesByProvider[providerName] ?? []
+      if (
+        !meta ||
+        gamesLoading ||
+        gamesLoadingMore ||
+        meta.page >= meta.lastPage ||
+        currentList.length >= MAX_GAMES_LIMIT
+      )
+        return
       void loadProviderGames(providerName, meta.page + 1)
     },
-    [gamesLoading, gamesLoadingMore, loadProviderGames, providerPage],
+    [gamesByProvider, gamesLoading, gamesLoadingMore, loadProviderGames, providerPage],
   )
 
   const loadAllGames = useCallback(async (page = 1) => {
@@ -108,8 +125,11 @@ export function useShopProviders() {
     setAllError(null)
     try {
       const result = await fetchGames({ page, limit: PAGE_SIZE })
-      const mapped = mapAssigned(result.items)
-      setAllGames((current) => (page === 1 ? mapped : [...current, ...mapped]))
+      const mapped = mapAssigned(result.items, true)
+      setAllGames((current) => {
+        const combined = page === 1 ? mapped : [...current, ...mapped]
+        return combined.slice(0, MAX_GAMES_LIMIT)
+      })
       setAllPage(result.pagination.current_page)
       setAllLastPage(result.pagination.last_page)
     } catch (err) {
@@ -122,9 +142,16 @@ export function useShopProviders() {
   }, [])
 
   const loadMoreAllGames = useCallback(() => {
-    if (allLoading || allLoadingMore || allPage === 0 || allPage >= allLastPage) return
+    if (
+      allLoading ||
+      allLoadingMore ||
+      allPage === 0 ||
+      allPage >= allLastPage ||
+      allGames.length >= MAX_GAMES_LIMIT
+    )
+      return
     void loadAllGames(allPage + 1)
-  }, [allLastPage, allLoading, allLoadingMore, allPage, loadAllGames])
+  }, [allGames.length, allLastPage, allLoading, allLoadingMore, allPage, loadAllGames])
 
   return {
     providers,
@@ -138,14 +165,15 @@ export function useShopProviders() {
     loadMoreProviderGames,
     providerHasMore: (providerName: string) => {
       const meta = providerPage[providerName]
-      return !!meta && meta.page < meta.lastPage
+      const count = (gamesByProvider[providerName] ?? []).length
+      return !!meta && meta.page < meta.lastPage && count < MAX_GAMES_LIMIT
     },
     allGames,
     allPage,
     allLoading,
     allLoadingMore,
     allError,
-    allHasMore: allPage > 0 && allPage < allLastPage,
+    allHasMore: allPage > 0 && allPage < allLastPage && allGames.length < MAX_GAMES_LIMIT,
     loadAllGames,
     loadMoreAllGames,
   }

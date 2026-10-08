@@ -148,10 +148,19 @@ export function HardwareTestGate() {
 
   if (gateOpen && !unlocked) {
     return (
-      <div className="pending-overlay" style={{ zIndex: 105 }}>
-        <form className="pending-card" onSubmit={submitGate}>
-          <h2>Hardware test</h2>
-          <p className="cashout-hint">Staff password to run the new-device checklist (printer, bill, scanner, permissions).</p>
+      <div className="kx-alert-backdrop winbet-modal-backdrop" style={{ zIndex: 110 }}>
+        <form className="winbet-modal-card icon-gold animate-pop-in" onSubmit={submitGate}>
+          <div className="winbet-modal-badge">
+            <span className="modal-badge-num"><i className="fa-solid fa-lock" /></span>
+            <span className="modal-badge-title">STAFF DIAGNOSTICS</span>
+          </div>
+          <div className="winbet-modal-icon-glow icon-gold">
+            <i className="fa-solid fa-key" style={{ fontSize: '1.8rem', color: '#f5b300' }} />
+          </div>
+          <h2 className="winbet-modal-title title-gold">Hardware Test</h2>
+          <p className="winbet-modal-desc">
+            Staff password to run the cabinet checklist (printer, bill, scanner, permissions).
+          </p>
           <input
             type="password"
             value={password}
@@ -159,28 +168,15 @@ export function HardwareTestGate() {
             placeholder="Admin password"
             autoFocus
             autoComplete="current-password"
-            style={{
-              width: '100%',
-              marginTop: 16,
-              padding: '0.75rem 1rem',
-              borderRadius: 10,
-              border: '1px solid rgba(148,163,184,0.35)',
-              background: 'rgba(15,23,42,0.8)',
-              color: '#f8fafc',
-              fontSize: '1.05rem',
-            }}
+            className="winbet-modal-input"
           />
-          {gateError ? (
-            <p className="error-text" style={{ marginTop: 10 }}>
-              {gateError}
-            </p>
-          ) : null}
-          <div className="kx-cta-row" style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button type="button" className="kx-btn kx-btn-ghost kx-btn-sm" onClick={() => setGateOpen(false)}>
-              Cancel
+          {gateError ? <p className="winbet-error-msg">{gateError}</p> : null}
+          <div className="winbet-modal-actions" style={{ marginTop: 20 }}>
+            <button type="submit" className="btn-winbet-modal-primary" disabled={!password.trim()}>
+              <i className="fa-solid fa-unlock me-1.5" /> Unlock
             </button>
-            <button type="submit" className="kx-btn kx-btn-primary kx-btn-sm" disabled={!password.trim()}>
-              Open
+            <button type="button" className="btn-winbet-modal-secondary" onClick={() => setGateOpen(false)}>
+              Cancel
             </button>
           </div>
         </form>
@@ -193,55 +189,122 @@ export function HardwareTestGate() {
   const failed = report?.checks.filter((c) => !c.ok).length ?? 0
 
   return (
-    <div className="hw-test-overlay" role="dialog" aria-label="Hardware test">
-      <aside className="hw-test-panel">
-        <header className="hw-lab-head">
-          <div>
-            <strong>Hardware test</strong>
-            <span>
-              {report
-                ? `${report.os} · ${report.user || 'user'} · ${failed} fail`
-                : 'New cabinet checklist'}
-            </span>
+    <div className="kx-alert-backdrop winbet-modal-backdrop" role="dialog" aria-label="Hardware test" style={{ zIndex: 110 }}>
+      <div className="winbet-modal-card hw-diag-modal animate-pop-in">
+        {/* Top Header Bar */}
+        <div className="hw-diag-top-bar">
+          <div className="winbet-modal-badge mb-0">
+            <span className="modal-badge-num"><i className="fa-solid fa-microchip" /></span>
+            <span className="modal-badge-title">HARDWARE DIAGNOSTICS</span>
           </div>
-          <button type="button" className="hw-lab-hide" onClick={closeAll}>
-            Close
-          </button>
-        </header>
-
-        <p className="hw-test-hint">Ctrl+Shift+D. Live cash-in and ticket-in are paused while this is open.</p>
-
-        {listenHint ? <p className="hw-lab-status">{listenHint}</p> : null}
-        {action ? <p className={action.toLowerCase().includes('ok') ? 'hw-lab-status' : 'error-text'}>{action}</p> : null}
-
-        <ul className="hw-test-list">
-          {(report?.checks ?? []).map((c) => (
-            <li key={c.id} className={c.ok ? 'hw-test-pass' : 'hw-test-fail'}>
-              <strong>{c.ok ? 'PASS' : 'FAIL'}</strong>
-              <span>
-                {c.name}
-                <small>{c.detail}</small>
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="hw-lab-label">Trigger tests</p>
-        <div className="hw-test-actions">
-          <button type="button" className="kx-btn kx-btn-ghost kx-btn-sm" disabled={busy} onClick={() => void refresh()}>
-            Re-check
-          </button>
-          <button type="button" className="kx-btn kx-btn-primary kx-btn-sm" disabled={busy} onClick={() => void runPrint()}>
-            Print test
-          </button>
-          <button type="button" className="kx-btn kx-btn-primary kx-btn-sm" disabled={busy} onClick={runScan}>
-            Scan test
-          </button>
-          <button type="button" className="kx-btn kx-btn-primary kx-btn-sm" disabled={busy} onClick={runBill}>
-            Bill test
+          <button type="button" className="btn-diag-close" onClick={closeAll} title="Close Diagnostics">
+            <i className="fa-solid fa-xmark" />
           </button>
         </div>
-      </aside>
+
+        {/* Modal Header */}
+        <div className="hw-diag-header">
+          <div className="hw-diag-icon-box">
+            <i className="fa-solid fa-toolbox" />
+          </div>
+          <div className="hw-diag-title-wrap">
+            <h2 className="hw-diag-title">CABINET HARDWARE TEST</h2>
+            <div className="hw-diag-meta-row">
+              <span className="hw-meta-tag">
+                <i className="fa-brands fa-linux me-1" /> {report?.os || 'Linux'}
+              </span>
+              <span className="hw-meta-tag">
+                <i className="fa-solid fa-user me-1" /> {report?.user || 'sys-0743'}
+              </span>
+              <span className={`hw-status-tag ${failed === 0 ? 'is-pass' : 'is-fail'}`}>
+                <i className={`fa-solid ${failed === 0 ? 'fa-circle-check' : 'fa-circle-exclamation'} me-1`} />
+                {failed === 0 ? '0 FAIL • ALL PASS' : `${failed} FAIL`}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hw-diag-hint-box">
+          <i className="fa-solid fa-circle-info text-cyan me-1.5" />
+          <span>Press <kbd>Ctrl+Shift+D</kbd> to toggle • Live cash-in and ticket-in are paused while open.</span>
+        </div>
+
+        {listenHint ? (
+          <div className="hw-diag-live-status is-listening">
+            <i className="fa-solid fa-spinner fa-spin me-2" />
+            <span>{listenHint}</span>
+          </div>
+        ) : null}
+
+        {action ? (
+          <div className={`hw-diag-live-status ${action.toLowerCase().includes('ok') ? 'is-success' : 'is-error'}`}>
+            <i className={`fa-solid ${action.toLowerCase().includes('ok') ? 'fa-circle-check' : 'fa-triangle-exclamation'} me-2`} />
+            <span>{action}</span>
+          </div>
+        ) : null}
+
+        {/* Diagnostic Checks List */}
+        <div className="hw-diag-checks-container">
+          <div className="hw-diag-checks-grid">
+            {(report?.checks ?? []).map((c) => (
+              <div key={c.id} className={`hw-check-card ${c.ok ? 'is-pass' : 'is-fail'}`}>
+                <div className="hw-check-badge">
+                  {c.ok ? (
+                    <><i className="fa-solid fa-check me-1" /> PASS</>
+                  ) : (
+                    <><i className="fa-solid fa-xmark me-1" /> FAIL</>
+                  )}
+                </div>
+                <div className="hw-check-info">
+                  <span className="hw-check-name">{c.name}</span>
+                  <span className="hw-check-detail">{c.detail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions Button Grid */}
+        <div className="hw-diag-actions-section">
+          <span className="hw-actions-label">
+            <i className="fa-solid fa-bolt text-warning me-1.5" /> TRIGGER HARDWARE TESTS
+          </span>
+          <div className="hw-diag-btn-grid">
+            <button
+              type="button"
+              className="btn-diag-action btn-diag-recheck"
+              disabled={busy}
+              onClick={() => void refresh()}
+            >
+              <i className="fa-solid fa-arrows-rotate me-1.5" /> Re-check
+            </button>
+            <button
+              type="button"
+              className="btn-diag-action btn-diag-print"
+              disabled={busy}
+              onClick={() => void runPrint()}
+            >
+              <i className="fa-solid fa-print me-1.5" /> Print Test
+            </button>
+            <button
+              type="button"
+              className="btn-diag-action btn-diag-scan"
+              disabled={busy}
+              onClick={runScan}
+            >
+              <i className="fa-solid fa-barcode me-1.5" /> Scan Test
+            </button>
+            <button
+              type="button"
+              className="btn-diag-action btn-diag-bill"
+              disabled={busy}
+              onClick={runBill}
+            >
+              <i className="fa-solid fa-money-bill-wave me-1.5" /> Bill Test
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

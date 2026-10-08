@@ -39,12 +39,42 @@ export function clearTerminal(): void {
 }
 
 const FINGERPRINT_KEY = 'kiosk-device-fingerprint'
+const DEV_OVERRIDE_KEY = 'kiosk-dev-fingerprint-override'
+
+export function unbindDevHardware(): string {
+  const newId = `DEV-HW-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
+  localStorage.setItem(DEV_OVERRIDE_KEY, newId)
+  localStorage.removeItem(STORAGE_KEY)
+  return newId
+}
+
+export function resetToRealHardware(): void {
+  localStorage.removeItem(DEV_OVERRIDE_KEY)
+  localStorage.removeItem(STORAGE_KEY)
+}
+
+if (typeof window !== 'undefined') {
+  ;(window as any).unbindDevHardware = () => {
+    const id = unbindDevHardware()
+    console.log(`[Dev] Unbound! Generated fresh Hardware ID: ${id}`)
+    window.location.reload()
+    return id
+  }
+  ;(window as any).resetToRealHardware = () => {
+    resetToRealHardware()
+    console.log('[Dev] Restored real system Hardware ID')
+    window.location.reload()
+  }
+}
 
 /**
  * Live hardware ID — read from Rust on every call (Option 1 anti-clone).
- * Never persist and reuse for API auth; copied folders fail on new hardware.
+ * If a DEV override is present (for testing/unbinding in Dev), use that.
  */
 export async function getLiveHardwareId(): Promise<string> {
+  const override = localStorage.getItem(DEV_OVERRIDE_KEY)
+  if (override) return override
+
   if (isTauriRuntime()) {
     return invoke<string>('get_device_fingerprint')
   }

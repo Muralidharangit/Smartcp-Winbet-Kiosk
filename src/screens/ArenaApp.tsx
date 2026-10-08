@@ -10,6 +10,7 @@ import {
   ticketIn,
 } from '../api/client'
 import ArenaShell from '../components/ArenaShell'
+import { CashOutConfirmModal } from '../components/CashOutConfirmModal'
 import { HardwareLabPanel } from '../components/HardwareLabPanel'
 import KioskAlert from '../components/KioskAlert'
 import { RequireCredit } from '../components/RequireCredit'
@@ -43,11 +44,12 @@ import { UnauthorizedScreen } from './UnauthorizedScreen'
 type Props = {
   terminal: StoredTerminal
   onUnauthorized: () => void
+  onRegisterToken?: () => void
 }
 
 const HEARTBEAT_MS = 60000
 
-export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
+export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
   const navigate = useNavigate()
   const {
     setConfig,
@@ -329,9 +331,10 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         return false
       }
       const cashMessage = friendlyMessage(err)
+      const isShopLow = cashMessage.toLowerCase().includes('shop balance')
       showAlert({
         tone: 'error',
-        title: cashMessage === 'Shop balance too low' ? 'Shop balance too low' : 'Cash not accepted',
+        title: isShopLow ? 'Shop balance low' : 'Cash not accepted',
         message: cashMessage,
         autoCloseMs: 0,
       })
@@ -369,9 +372,11 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         return false
       }
       const ticketMessage = friendlyMessage(err)
+      const isShopLow = ticketMessage.toLowerCase().includes('shop balance')
+      const isVoid = ticketMessage.toLowerCase().includes('void')
       showAlert({
         tone: 'error',
-        title: ticketMessage === 'Shop balance too low' ? 'Shop balance too low' : 'Ticket not accepted',
+        title: isShopLow ? 'Shop balance low' : isVoid ? 'Ticket Void / Invalid' : 'Ticket not accepted',
         message: ticketMessage,
         autoCloseMs: 0,
       })
@@ -400,7 +405,7 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
         if (!hw?.printer.connected) {
           showAlert({
             tone: 'error',
-            title: 'Printer required',
+            title: 'Printer not connected',
             message:
               'Connect the Epson printer (USB + 24V power) before cash-out. Your credit stays on this machine.',
             autoCloseMs: 0,
@@ -410,7 +415,7 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
       } catch {
         showAlert({
           tone: 'error',
-          title: 'Printer required',
+          title: 'Printer not connected',
           message: 'Cannot reach the printer. Fix the printer connection, then try cash-out again.',
           autoCloseMs: 0,
         })
@@ -554,15 +559,41 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     return <UnauthorizedScreen />
   }
 
-  const doCashOut = () => void cashOut()
+  const [showCashOutConfirm, setShowCashOutConfirm] = useState(false)
+  const [cashOutBusy, setCashOutBusy] = useState(false)
+
+  const handleRequestCashOut = () => {
+    if (balance <= 0) {
+      showAlert({
+        tone: 'warn',
+        title: 'No credit',
+        message: 'There is no credit to cash out. Insert cash or scan a ticket first.',
+        autoCloseMs: 0,
+      })
+      return
+    }
+    setShowCashOutConfirm(true)
+  }
+
+  const handleConfirmCashOut = async () => {
+    setCashOutBusy(true)
+    try {
+      setShowCashOutConfirm(false)
+      await cashOut()
+    } finally {
+      setCashOutBusy(false)
+    }
+  }
+
   const labEnabled = isHardwareSimulatorEnabled()
 
   function withArena(node: ReactNode, opts?: { creditPanel?: boolean }) {
     return (
       <ArenaShell
-        onCashOut={doCashOut}
+        onCashOut={handleRequestCashOut}
         showCreditPanel={opts?.creditPanel !== false}
         printerReady={printerReady || labEnabled}
+        onRegisterToken={onRegisterToken || onUnauthorized}
       >
         {node}
       </ArenaShell>
@@ -573,6 +604,12 @@ export function ArenaApp({ terminal, onUnauthorized: _onUnauthorized }: Props) {
     <div className="app-shell">
       <StatusToast />
       <KioskAlert />
+      <CashOutConfirmModal
+        isOpen={showCashOutConfirm}
+        loading={cashOutBusy}
+        onConfirm={() => void handleConfirmCashOut()}
+        onCancel={() => setShowCashOutConfirm(false)}
+      />
       <HardwareLabPanel
         balance={balance}
         currencySymbol={config?.CurrencySymbol ?? 'N$'}

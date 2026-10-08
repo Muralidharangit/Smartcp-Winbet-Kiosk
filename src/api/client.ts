@@ -243,15 +243,25 @@ export type BetResult = {
 export type GameCatalogItem = {
   id: string
   name: string
-  category: string
-  description: string
-  payout_label: string
-  choices: string[]
+  category?: string
+  description?: string
+  payout_label?: string
+  choices?: string[]
   kind?: 'local' | 'provider'
   provider?: string
   image?: string | null
+  image_url?: string | null
+  game_image?: string | null
+  images?: {
+    image?: string | null
+    logo?: string | null
+    banner?: string | null
+    thumbnail?: string | null
+  } | null
   provider_image?: string | null
   uuid?: string
+  launcher?: string
+  [key: string]: unknown
 }
 
 export type GamesPage = {
@@ -282,7 +292,7 @@ export async function fetchGames(input: {
     items,
     pagination: body.pagination ?? {
       current_page: page,
-      last_page: 1,
+      last_page: items.length >= limit ? page + 1 : page,
       per_page: limit,
       total: items.length,
     },
@@ -300,8 +310,8 @@ export type ShopProviderItem = {
   }
 }
 
-export async function fetchProviders(page = 1): Promise<ShopProviderItem[]> {
-  const response = await fetch(`${apiBase()}/terminals/providers?page=${page}&limit=50`, {
+export async function fetchProviders(page = 1, limit = 100): Promise<ShopProviderItem[]> {
+  const response = await fetch(`${apiBase()}/terminals/providers?page=${page}&limit=${limit}`, {
     headers: { Accept: 'application/json' },
   })
   if (response.status === 404) {
@@ -315,7 +325,7 @@ export async function fetchProviders(page = 1): Promise<ShopProviderItem[]> {
 }
 
 async function deriveProvidersFromGames(): Promise<ShopProviderItem[]> {
-  const result = await fetchGames({ page: 1, limit: 200 })
+  const result = await fetchGames({ page: 1, limit: 100 })
   const grouped = new Map<string, ShopProviderItem>()
   for (const game of result.items) {
     if (game.kind === 'local') continue

@@ -24,6 +24,7 @@ export default function App() {
     return stored
   })
   const [justRegistered, setJustRegistered] = useState<TerminalRegistration | null>(null)
+  const [isReRegistering, setIsReRegistering] = useState(false)
 
   function handleRegistered(result: TerminalRegistration) {
     if (result.portal_slug) {
@@ -38,6 +39,7 @@ export default function App() {
     }
     saveTerminal(stored)
     setJustRegistered(result)
+    setIsReRegistering(false)
   }
 
   function handleContinueFromSuccess() {
@@ -50,6 +52,15 @@ export default function App() {
     clearPortalSlug()
     setTerminal(null)
     setJustRegistered(null)
+    setIsReRegistering(false)
+  }
+
+  function handleOpenRegistration() {
+    setIsReRegistering(true)
+  }
+
+  function handleCancelRegistration() {
+    setIsReRegistering(false)
   }
 
   if (justRegistered) {
@@ -62,19 +73,24 @@ export default function App() {
     )
   }
 
-  if (!terminal) {
+  if (!terminal || isReRegistering) {
     return (
       <>
         <StaffExitGate />
         <HardwareTestGate />
         <div className="app-shell">
-          <header className="top-bar">
-            <div className="brand">Betwise Kiosk Setup</div>
-            <div className="meta">
-              <span>{isTauriApp() ? 'Tauri + Rust — cabinet bind' : 'Browser dev mode'}</span>
+          <header className="winbet-topbar">
+            <div className="winbet-brand">
+              <span className="winbet-brand-text">WINBET</span>
+            </div>
+            <div className="terminal-name" style={{ color: '#c4b5fd', fontSize: '0.85rem' }}>
+              <span>{isTauriApp() ? 'Tauri + Rust — Cabinet Mode' : 'Browser Dev Mode'}</span>
             </div>
           </header>
-          <RegistrationScreen onRegistered={handleRegistered} />
+          <RegistrationScreen
+            onRegistered={handleRegistered}
+            onCancel={terminal ? handleCancelRegistration : undefined}
+          />
         </div>
       </>
     )
@@ -84,7 +100,11 @@ export default function App() {
     <BrowserRouter>
       <StaffExitGate />
       <HardwareTestGate />
-      <ArenaApp terminal={terminal} onUnauthorized={handleResetRegistration} />
+      <ArenaApp
+        terminal={terminal}
+        onUnauthorized={handleResetRegistration}
+        onRegisterToken={handleOpenRegistration}
+      />
     </BrowserRouter>
   )
 }

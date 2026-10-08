@@ -6,13 +6,14 @@ import {
   getPortalSlug,
   getShopApiBaseUrl,
 } from '../config/env'
-import { getLiveHardwareId, getOperatingSystem } from '../lib/storage'
+import { getLiveHardwareId, getOperatingSystem, unbindDevHardware } from '../lib/storage'
 
 type Props = {
   onRegistered: (result: TerminalRegistration) => void
+  onCancel?: () => void
 }
 
-export function RegistrationScreen({ onRegistered }: Props) {
+export function RegistrationScreen({ onRegistered, onCancel }: Props) {
   const [portalSlug, setPortalSlugInput] = useState(() => getPortalSlug() || DEFAULT_PORTAL_SLUG)
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
@@ -62,54 +63,126 @@ export function RegistrationScreen({ onRegistered }: Props) {
   }
 
   return (
-    <div className="center-panel">
-      <form className="card" onSubmit={handleSubmit}>
-        <h1>Register Kiosk</h1>
-        <p>
-          Enter the portal slug and the 19-character registration token from the portal. Shop name, terminal name, and machine ID
-          are assigned automatically from the next available terminal slot Master created for this shop.
+    <div className="winbet-reg-page">
+      <form className="winbet-reg-form" onSubmit={handleSubmit}>
+        {/* Header with Title and LIVE API Pill */}
+        <div className="winbet-reg-header">
+          <h2 className="winbet-reg-title">Register Machine</h2>
+          <span className="winbet-reg-api-badge">LIVE API</span>
+        </div>
+
+        <p className="winbet-reg-desc">
+          Enter the portal slug and shop registration token to claim your station.
         </p>
 
-        {error ? <div className="error-text">{error}</div> : null}
+        {error ? (
+          <div className="winbet-reg-error">
+            <div>{error}</div>
+            {error.toLowerCase().includes('already registered') || error.toLowerCase().includes('unbind') ? (
+              <div style={{ marginTop: 10 }}>
+                <button
+                  type="button"
+                  style={{
+                    background: 'linear-gradient(180deg, #781ff5 0%, #590fc9 100%)',
+                    border: '1px solid #a855f7',
+                    color: '#ffffff',
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.3px',
+                    boxShadow: '0 4px 12px rgba(120, 31, 245, 0.4)',
+                  }}
+                  onClick={() => {
+                    const newId = unbindDevHardware()
+                    setError(null)
+                    alert(`Unbound! Generated fresh Hardware ID: ${newId}. You can now register with your token.`)
+                  }}
+                >
+                  ⚡ Unbind & Generate New Dev Hardware ID
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
-        <div className="field">
-          <label htmlFor="portal_slug">Portal slug</label>
+        {/* PORTAL SLUG Field */}
+        <div className="winbet-reg-field">
+          <label htmlFor="portal_slug" className="winbet-reg-label">
+            PORTAL SLUG
+          </label>
           <input
             id="portal_slug"
             name="portal_slug"
+            className="winbet-reg-input"
             value={portalSlug}
             onChange={(event) => setPortalSlugInput(event.target.value.trim().toLowerCase())}
-            placeholder="e.g. betwise"
+            placeholder="betwise"
             autoComplete="off"
             required
           />
         </div>
 
-        <div className="field">
-          <label htmlFor="registration_token">Registration token</label>
+        {/* REGISTRATION TOKEN Field */}
+        <div className="winbet-reg-field">
+          <label htmlFor="registration_token" className="winbet-reg-label">
+            REGISTRATION TOKEN
+          </label>
           <input
             id="registration_token"
             name="registration_token"
+            className="winbet-reg-input winbet-reg-input-token"
             value={token}
             onChange={(event) => setToken(event.target.value.toUpperCase())}
             maxLength={19}
-            placeholder="ABC1234567890123456"
+            placeholder="TES4122000111554535"
             autoComplete="off"
             required
           />
         </div>
 
-        <button
-          className="primary-btn"
-          type="submit"
-          disabled={loading || token.trim().length !== 19 || !portalSlug.trim()}
-        >
-          {loading ? 'Registering…' : 'Register PC'}
-        </button>
-
-        <p className="muted" style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.85rem' }}>
-          API: {getShopApiBaseUrl(portalSlug)}
+        <p className="winbet-reg-note">
+          Station ID, shop name, player ID, and real-time cash balance are fetched directly from the backend API.
         </p>
+
+        {/* Actions Row */}
+        <div className="winbet-reg-actions">
+          <button
+            type="button"
+            className="winbet-reg-btn-close"
+            onClick={() => {
+              setError(null)
+              if (onCancel) {
+                onCancel()
+              }
+            }}
+          >
+            Close
+          </button>
+
+          <button
+            type="submit"
+            className="winbet-reg-btn-submit"
+            disabled={loading || token.trim().length !== 19 || !portalSlug.trim()}
+          >
+            <span>🔗</span>
+            <span>{loading ? 'Registering…' : 'Register Station'}</span>
+          </button>
+        </div>
+
+        {/* Footer Station Badge Strip */}
+        <div className="winbet-reg-footer">
+          <div className="winbet-reg-footer-icon" aria-hidden="true">
+            🎰
+          </div>
+          <div>
+            <div className="winbet-reg-footer-title">WinBet Station</div>
+            <div className="winbet-reg-footer-sub">
+              Live Backend Integration • Real-Time Cash Balance
+            </div>
+          </div>
+        </div>
       </form>
     </div>
   )

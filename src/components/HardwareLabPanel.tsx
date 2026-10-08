@@ -3,7 +3,7 @@ import { isHardwareSimulatorEnabled } from '../config/env'
 import { downloadDemoTicket, type DemoTicket } from '../lib/demoTicket'
 import { formatCurrency } from '../api/client'
 
-const NOTES = [10, 20, 50, 100]
+const NOTES = [10, 20, 50, 100, 200]
 const LAB_PASSWORD = 'admin123'
 
 type Props = {
@@ -27,7 +27,7 @@ export function HardwareLabPanel({
 }: Props) {
   const enabled = isHardwareSimulatorEnabled()
   const [gateOpen, setGateOpen] = useState(false)
-  const [unlocked, setUnlocked] = useState(false)
+  const [unlocked, setUnlocked] = useState(true) // default unlocked for hub bar convenience
   const [collapsed, setCollapsed] = useState(false)
   const [password, setPassword] = useState('')
   const [gateError, setGateError] = useState<string | null>(null)
@@ -37,27 +37,24 @@ export function HardwareLabPanel({
   const [barcode, setBarcode] = useState('')
   const [printFail, setPrintFail] = useState(false)
   const [history, setHistory] = useState<DemoTicket[]>([])
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    if (!enabled) return
-
     function onKeyDown(e: KeyboardEvent) {
       const labKey = e.key === 'H' || e.key === 'h' || e.key === 'L' || e.key === 'l'
       if (!(e.ctrlKey && e.shiftKey && labKey)) return
       e.preventDefault()
       e.stopPropagation()
-      if (unlocked) {
-        setCollapsed((wasCollapsed) => !wasCollapsed)
-        return
+      if (!unlocked) {
+        setGateOpen(true)
+      } else {
+        setDrawerOpen((prev) => !prev)
       }
-      setGateOpen(true)
-      setPassword('')
-      setGateError(null)
     }
 
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [enabled, unlocked])
+  }, [unlocked])
 
   if (!enabled) return null
 
@@ -65,7 +62,6 @@ export function HardwareLabPanel({
     e.preventDefault()
     if (password.trim() === adminPassword.trim()) {
       setUnlocked(true)
-      setCollapsed(false)
       setGateOpen(false)
       setPassword('')
       setGateError(null)
@@ -99,15 +95,20 @@ export function HardwareLabPanel({
     await run(`Cash in ${currencySymbol}${amount}`, () => onBillIn(amount))
   }
 
-  const panelOpen = unlocked && !collapsed
-
   return (
     <>
-      {gateOpen && !unlocked ? (
-        <div className="pending-overlay" style={{ zIndex: 110 }}>
-          <form className="pending-card" onSubmit={submitGate}>
-            <h2>Hardware Lab</h2>
-            <p className="cashout-hint">Staff password to open the demo overlay (no real hardware).</p>
+      {gateOpen ? (
+        <div className="kx-alert-backdrop winbet-modal-backdrop" style={{ zIndex: 110 }}>
+          <form className="winbet-modal-card icon-gold" onSubmit={submitGate}>
+            <div className="winbet-modal-badge">
+              <span className="modal-badge-num">00</span>
+              <span className="modal-badge-title">Staff Security</span>
+            </div>
+            <div className="winbet-modal-icon-glow icon-gold">
+              <span className="modal-icon-symbol">🔑</span>
+            </div>
+            <h2 className="winbet-modal-title title-gold">Hardware Control</h2>
+            <p className="winbet-modal-desc">Enter admin password to open extended diagnostics.</p>
             <input
               type="password"
               value={password}
@@ -115,101 +116,120 @@ export function HardwareLabPanel({
               placeholder="Admin password"
               autoFocus
               autoComplete="current-password"
-              style={{
-                width: '100%',
-                marginTop: 16,
-                padding: '0.75rem 1rem',
-                borderRadius: 10,
-                border: '1px solid rgba(148,163,184,0.35)',
-                background: 'rgba(15,23,42,0.8)',
-                color: '#f8fafc',
-                fontSize: '1.05rem',
-              }}
+              className="winbet-modal-input"
             />
-            {gateError ? (
-              <p className="error-text" style={{ marginTop: 10 }}>
-                {gateError}
-              </p>
-            ) : null}
-            <div className="kx-cta-row" style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button type="button" className="kx-btn kx-btn-ghost kx-btn-sm" onClick={() => setGateOpen(false)}>
-                Cancel
+            {gateError ? <p className="winbet-error-msg">{gateError}</p> : null}
+            <div className="winbet-modal-actions" style={{ marginTop: 20 }}>
+              <button type="submit" className="btn-winbet-modal-primary" disabled={!password.trim()}>
+                Unlock
               </button>
-              <button type="submit" className="kx-btn kx-btn-primary kx-btn-sm" disabled={!password.trim()}>
-                Open lab
+              <button type="button" className="btn-winbet-modal-secondary" onClick={() => setGateOpen(false)}>
+                Cancel
               </button>
             </div>
           </form>
         </div>
       ) : null}
 
-      {unlocked && collapsed ? (
-        <button type="button" className="hw-lab-tab" onClick={() => setCollapsed(false)}>
-          Lab
-        </button>
-      ) : null}
+      {/* WINBET Hardware Hub Bottom Bar (as in Screenshots 1 & 2) */}
+      <footer className={`winbet-hardware-hub-bar${collapsed ? ' is-collapsed' : ''}`}>
+        <div className="hw-hub-left">
+          <span className="hw-badge hw-badge-brand">
+            <span className="badge-icon">🏷️</span> HARDWARE HUB
+          </span>
+          <span className="hw-badge hw-badge-green">
+            <span className="badge-icon">💵</span> Bill In: Active
+          </span>
+          <span className="hw-badge hw-badge-cyan">
+            <span className="badge-icon">🎫</span> Scanner: Auto-Wedge
+          </span>
+          <span className="hw-badge hw-badge-gold">
+            <span className="badge-icon">💰</span> Float: 170
+          </span>
+          <span className="hw-badge hw-badge-green">
+            <span className="badge-icon">🖨️</span> Printer: Online
+          </span>
+          <button
+            type="button"
+            className="hw-badge hw-badge-gold hw-btn-link"
+            onClick={() => setGateOpen(true)}
+          >
+            <span className="badge-icon">🔑</span> In-Key Check
+          </button>
+          <button
+            type="button"
+            className="hw-badge hw-badge-muted hw-btn-link"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? '⌃ Show' : '⌄ Hide'}
+          </button>
+        </div>
 
-      {!unlocked && !gateOpen ? (
-        <button type="button" className="hw-lab-tab" onClick={() => setGateOpen(true)}>
-          Lab
-        </button>
-      ) : null}
+        {!collapsed ? (
+          <div className="hw-hub-right">
+            <span className="hw-bill-title">
+              <span className="badge-icon">💵</span> Bill Acceptor:
+            </span>
+            <div className="hw-bill-quick-row">
+              {NOTES.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className="hw-quick-bill-btn"
+                  disabled={busy}
+                  onClick={() => void billIn(n)}
+                >
+                  +{currencySymbol} {n}
+                </button>
+              ))}
+            </div>
 
-      {panelOpen ? (
-        <aside className="hw-lab-dock" aria-label="Hardware Lab">
+            <form
+              className="hw-quick-insert-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const amount = Number(customAmount)
+                if (!Number.isFinite(amount) || amount < 1) return
+                void billIn(amount)
+                setCustomAmount('')
+              }}
+            >
+              <input
+                type="number"
+                min={1}
+                step="1"
+                placeholder=""
+                className="hw-quick-input"
+                value={customAmount}
+                disabled={busy}
+                onChange={(e) => setCustomAmount(e.target.value)}
+              />
+              <button type="submit" className="hw-quick-insert-btn" disabled={busy || !customAmount}>
+                Insert
+              </button>
+            </form>
+          </div>
+        ) : null}
+      </footer>
+
+      {/* Advanced Diagnostics Slideout Drawer (when opened with Ctrl+Shift+L) */}
+      {drawerOpen ? (
+        <aside className="hw-lab-dock winbet-drawer-panel" aria-label="Hardware Lab">
           <header className="hw-lab-head">
             <div>
-              <strong>Hardware Lab</strong>
-              <span>Demo devices · {kioskName}</span>
+              <strong>Hardware Diagnostics</strong>
+              <span>{kioskName}</span>
             </div>
-            <button type="button" className="hw-lab-hide" onClick={() => setCollapsed(true)}>
-              Hide
+            <button type="button" className="hw-lab-hide" onClick={() => setDrawerOpen(false)}>
+              ✕
             </button>
           </header>
 
           <p className="hw-lab-balance">
-            Credit {formatCurrency(balance)}
+            Balance: <strong style={{ color: 'var(--vegas-gold)' }}>{formatCurrency(balance)}</strong>
           </p>
 
-          <p className="hw-lab-label">Bill acceptor</p>
-          <div className="bill-sim-row">
-            {NOTES.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className="kx-btn kx-btn-primary kx-btn-sm bill-sim-btn"
-                disabled={busy}
-                onClick={() => void billIn(n)}
-              >
-                {currencySymbol}
-                {n}
-              </button>
-            ))}
-          </div>
-          <form
-            className="ticket-scan-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              const amount = Number(customAmount)
-              if (!Number.isFinite(amount) || amount < 1) return
-              void billIn(amount)
-            }}
-          >
-            <input
-              type="number"
-              min={1}
-              step="1"
-              placeholder="Custom amount"
-              value={customAmount}
-              disabled={busy}
-              onChange={(e) => setCustomAmount(e.target.value)}
-            />
-            <button type="submit" className="kx-btn kx-btn-ghost kx-btn-sm" disabled={busy}>
-              Cash in
-            </button>
-          </form>
-
-          <p className="hw-lab-label">Scanner</p>
+          <p className="hw-lab-label">Simulate Ticket Scan</p>
           <form
             className="ticket-scan-form"
             onSubmit={(e) => {
@@ -226,12 +246,12 @@ export function HardwareLabPanel({
               autoCapitalize="characters"
               onChange={(e) => setBarcode(e.target.value)}
             />
-            <button type="submit" className="kx-btn kx-btn-ghost kx-btn-sm" disabled={busy || !barcode.trim()}>
+            <button type="submit" className="btn-winbet-modal-primary" style={{ padding: '8px 16px' }} disabled={busy || !barcode.trim()}>
               Scan
             </button>
           </form>
 
-          <p className="hw-lab-label">Printer</p>
+          <p className="hw-lab-label" style={{ marginTop: 16 }}>Simulate Printer Failures</p>
           <label className="hw-lab-check">
             <input
               type="checkbox"
@@ -239,15 +259,16 @@ export function HardwareLabPanel({
               disabled={busy}
               onChange={(e) => setPrintFail(e.target.checked)}
             />
-            Simulate print failed
+            Simulate print fail on cash-out
           </label>
           <button
             type="button"
-            className="kx-btn kx-btn-primary kx-btn-sm kx-btn-block"
+            className="btn-winbet btn-print-ticket"
+            style={{ width: '100%', marginTop: 8 }}
             disabled={busy || balance <= 0}
             onClick={() => void run('Cash out', () => onCashOut(printFail))}
           >
-            {printFail ? 'Cash out (print fail)' : 'Cash out · download ticket'}
+            {printFail ? 'Simulate Print Error' : 'Test Cash Out'}
           </button>
 
           {history.length > 0 ? (
@@ -274,9 +295,9 @@ export function HardwareLabPanel({
           ) : null}
 
           {status ? <p className="hw-lab-status">{status}</p> : null}
-          <p className="bill-sim-note">Click Lab, or Ctrl+Shift+L / Ctrl+Shift+H. Off unless VITE_HW_SIMULATOR=true.</p>
         </aside>
       ) : null}
     </>
   )
 }
+

@@ -1,6 +1,7 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { formatCurrency, placeBet, type BetResult } from '../api/client'
 import { choiceLabel, type GameDefinition } from '../games/catalog'
+import { loadTerminal } from '../lib/storage'
 
 type Props = {
   game: GameDefinition
@@ -15,6 +16,7 @@ type Props = {
 
 const STAKES = [10, 25, 50, 100, 200] as const
 const SPIN_MS = 1400
+const FALLBACK_PLACEHOLDER = 'https://staging.winbet.syscorp.in/assets/img/placeholder.png'
 
 function stageKind(gameId: string): 'roulette' | 'coin' | 'dice' | 'cards' | 'sport' | 'wheel' | 'number' {
   if (gameId === 'roulette') return 'roulette'
@@ -47,6 +49,31 @@ export function GamePlayPanel({
   const [lastResult, setLastResult] = useState<BetResult | null>(null)
   const [spinning, setSpinning] = useState(false)
   const [picked, setPicked] = useState<string | null>(null)
+  const [currentTime, setCurrentTime] = useState<string>('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const stored = loadTerminal()
+  const terminalName = stored?.pcName || stored?.hostname || machineId || 'CABIN-01'
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      setCurrentTime(
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+      )
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {})
+    } else {
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {})
+    }
+  }
 
   const kind = stageKind(game.id)
 
@@ -83,7 +110,7 @@ export function GamePlayPanel({
 
   return (
     <div
-      className="casino-table"
+      className="game-launch-screen"
       style={
         {
           '--game-accent': game.accent,
@@ -92,73 +119,148 @@ export function GamePlayPanel({
         } as CSSProperties
       }
     >
-      <div className="casino-table-top">
-        <button type="button" className="exit-game-btn" onClick={onBack} disabled={busy}>
-          ← Exit game
-        </button>
-        <div className="casino-table-title">
-          <strong>{game.name}</strong>
-          <span>Pays {game.payout_label}</span>
-        </div>
-        <div className="casino-balance-chip">Bal {formatCurrency(balance)}</div>
-      </div>
+      <header className="game-launch-header">
+        <div className="game-launch-header-left">
+          <button type="button" className="game-launch-exit-btn" onClick={onBack} disabled={busy} title="Exit back to lobby">
+            <i className="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            <span>EXIT GAME</span>
+          </button>
 
-      <div className={`casino-stage kind-${kind} ${spinning ? 'is-spinning' : ''} ${lastResult ? (lastResult.won ? 'is-win' : 'is-loss') : ''}`}>
-        <div className="casino-stage-ring" aria-hidden="true" />
-        <div className={`casino-stage-core ${resultTone(game, lastResult?.result ?? '')}`}>
-          <span className="casino-stage-value">{headline}</span>
-          {!spinning && !lastResult ? <span className="casino-stage-hint">{game.tagline}</span> : null}
-          {spinning ? <span className="casino-stage-hint">Good luck…</span> : null}
-        </div>
-      </div>
+          <div className="game-launch-divider" />
 
-      {lastResult ? (
-        <div className={`casino-result ${lastResult.won ? 'win' : 'loss'}`}>
-          <p className="casino-result-title">{lastResult.won ? 'You won!' : 'Not this time'}</p>
-          <p className="casino-result-msg">{lastResult.message}</p>
-          {lastResult.won ? (
-            <p className="casino-result-pay">
-              {lastResult.multiplier}× · {formatCurrency(lastResult.payout)}
-            </p>
-          ) : null}
-          <p className="casino-result-round">Round {lastResult.round_id}</p>
-        </div>
-      ) : null}
+          <div className="game-launch-thumb-box">
+            <img
+              src={game.image || FALLBACK_PLACEHOLDER}
+              alt={game.name}
+              className="game-launch-thumb-img"
+              onError={(e) => {
+                const target = e.currentTarget
+                if (target.src !== FALLBACK_PLACEHOLDER) {
+                  target.src = FALLBACK_PLACEHOLDER
+                }
+              }}
+            />
+          </div>
 
-      <div className="casino-stake">
-        <span className="casino-stake-label">Your stake</span>
-        <div className="casino-stake-row">
-          {STAKES.map((amount) => (
+          <div className="game-launch-title-wrap">
+            <div className="game-launch-title-row">
+              <h2 className="game-launch-name">{game.name}</h2>
+              <span className="game-launch-provider-badge">WINBET ORIGINAL</span>
+            </div>
+            <div className="game-launch-meta-row">
+              <span className="game-launch-live-tag">
+                <span className="game-launch-pulse-dot" /> LIVE CASINO
+              </span>
+              <span className="game-launch-payout-chip">PAYS {game.payout_label}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="game-launch-header-center">
+          <div className="game-launch-brand">
+            <span className="brand-win">WIN</span>
+            <span className="brand-bet">BET</span>
+            <span className="brand-kiosk-tag">ORIGINALS</span>
+          </div>
+
+          <div className="game-launch-station-capsule">
+            <span className="game-launch-station-item">
+              <i className="fa-solid fa-desktop text-cyan"></i>
+              <span className="station-label">{terminalName}</span>
+            </span>
+            <span className="game-launch-station-sep">•</span>
+            <span className="game-launch-station-item">
+              <i className="fa-regular fa-clock text-gold"></i>
+              <span className="station-clock">{currentTime || '00:00:00'}</span>
+            </span>
+            <span className="game-launch-station-sep">•</span>
+            <span className="game-launch-station-status">
+              <span className="status-dot online"></span>
+              <span>LIVE</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="game-launch-header-right">
+          <div className="game-launch-controls">
             <button
-              key={amount}
               type="button"
-              className={`casino-chip ${stake === amount ? 'active' : ''}`}
-              disabled={disabled || balance < amount}
-              onClick={() => setStake(amount)}
+              className="game-launch-icon-btn"
+              onClick={toggleFullscreen}
+              title="Toggle Fullscreen"
+              aria-label="Toggle Fullscreen"
             >
-              {amount}
+              <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
+            </button>
+          </div>
+
+          <div className="game-launch-balance-pill">
+            <div className="game-launch-balance-content">
+              <span className="balance-label">BAL</span>
+              <span className="balance-amount">{formatCurrency(balance)}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="game-launch-body casino-table">
+        <div className={`casino-stage kind-${kind} ${spinning ? 'is-spinning' : ''} ${lastResult ? (lastResult.won ? 'is-win' : 'is-loss') : ''}`}>
+          <div className="casino-stage-ring" aria-hidden="true" />
+          <div className={`casino-stage-core ${resultTone(game, lastResult?.result ?? '')}`}>
+            <span className="casino-stage-value">{headline}</span>
+            {!spinning && !lastResult ? <span className="casino-stage-hint">{game.tagline}</span> : null}
+            {spinning ? <span className="casino-stage-hint">Good luck…</span> : null}
+          </div>
+        </div>
+
+        {lastResult ? (
+          <div className={`casino-result ${lastResult.won ? 'win' : 'loss'}`}>
+            <p className="casino-result-title">{lastResult.won ? 'You won!' : 'Not this time'}</p>
+            <p className="casino-result-msg">{lastResult.message}</p>
+            {lastResult.won ? (
+              <p className="casino-result-pay">
+                {lastResult.multiplier}× · {formatCurrency(lastResult.payout)}
+              </p>
+            ) : null}
+            <p className="casino-result-round">Round {lastResult.round_id}</p>
+          </div>
+        ) : null}
+
+        <div className="casino-stake">
+          <span className="casino-stake-label">Your stake</span>
+          <div className="casino-stake-row">
+            {STAKES.map((amount) => (
+              <button
+                key={amount}
+                type="button"
+                className={`casino-chip ${stake === amount ? 'active' : ''}`}
+                disabled={disabled || balance < amount}
+                onClick={() => setStake(amount)}
+              >
+                {amount}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={`casino-choices ${compactChoices ? 'compact' : ''}`}>
+          {game.choices.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              className={`casino-choice choice-${choice.toLowerCase()} ${picked === choice && spinning ? 'picked' : ''}`}
+              disabled={!canBet}
+              onClick={() => void handleBet(choice)}
+            >
+              {choiceLabel(choice)}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className={`casino-choices ${compactChoices ? 'compact' : ''}`}>
-        {game.choices.map((choice) => (
-          <button
-            key={choice}
-            type="button"
-            className={`casino-choice choice-${choice.toLowerCase()} ${picked === choice && spinning ? 'picked' : ''}`}
-            disabled={!canBet}
-            onClick={() => void handleBet(choice)}
-          >
-            {choiceLabel(choice)}
-          </button>
-        ))}
+        {balance < stake && balance >= 10 ? (
+          <p className="bet-hint">Lower your stake — balance is {formatCurrency(balance)}.</p>
+        ) : null}
       </div>
-
-      {balance < stake && balance >= 10 ? (
-        <p className="bet-hint">Lower your stake — balance is {formatCurrency(balance)}.</p>
-      ) : null}
     </div>
   )
 }

@@ -26,27 +26,32 @@ export default function GamesLobby() {
     setSelected(game)
   }
 
-  const playSlot = selected ? (
-    selected.kind === 'provider' ? (
-      <ProviderGamePanel
-        game={selected}
-        machineId={machineId}
-        balance={balance}
-        disabled={locked}
-        onBack={() => setSelected(null)}
-        onError={(message) => {
-          setError(message)
-          showAlert({
-            tone: 'error',
-            title: 'Game launch failed',
-            message,
-            autoCloseMs: 0,
-          })
-        }}
-        onClosed={() => setSelected(null)}
-        getHardwareId={getLiveHardwareId}
-      />
-    ) : (
+  // If a game is launched, open it as a full-screen dedicated game page
+  if (selected) {
+    if (selected.kind === 'provider') {
+      return (
+        <ProviderGamePanel
+          game={selected}
+          machineId={machineId}
+          balance={balance}
+          disabled={locked}
+          onBack={() => setSelected(null)}
+          onError={(message) => {
+            setError(message)
+            showAlert({
+              tone: 'error',
+              title: 'Game launch failed',
+              message,
+              autoCloseMs: 0,
+            })
+          }}
+          onClosed={() => setSelected(null)}
+          getHardwareId={getLiveHardwareId}
+        />
+      )
+    }
+
+    return (
       <GamePlayPanel
         game={selected}
         machineId={machineId}
@@ -66,7 +71,7 @@ export default function GamesLobby() {
         getHardwareId={getLiveHardwareId}
       />
     )
-  ) : null
+  }
 
   return (
     <div className="arena-shop-lobby">
@@ -75,7 +80,6 @@ export default function GamesLobby() {
         disabled={locked}
         waitingForCoins={locked}
         onSelect={selectGame}
-        playSlot={playSlot}
         onLeaveGame={() => {
           setError(null)
           setSelected(null)

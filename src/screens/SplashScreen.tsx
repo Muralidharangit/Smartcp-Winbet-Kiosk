@@ -11,12 +11,25 @@ export default function SplashScreen({ redirectTo }: { redirectTo?: string }) {
   }, [navigate, redirectTo]);
 
   return (
-    <main className="screen splash">
-      <div>
-        <div className="splash-mark">NAD Arena</div>
-        <p className="splash-sub">Kiosk terminal</p>
-        <div className="pulse-bar" aria-hidden />
+    <main className="splash-screen-container">
+      <div className="splash-content animate-pop-in">
+        <div className="splash-logo animate-pulse">
+          <span className="logo-glyph">🎰</span>
+        </div>
+        <div className="splash-brand-title">
+          <span className="brand-win-part">WIN</span>
+          <span className="brand-bet-part">BET</span>
+        </div>
+        <div className="splash-brand-sub">TERMINAL KIOSK SYSTEM</div>
+        <div className="splash-loader-bar">
+          <div className="loader-fill" />
+        </div>
+        <div className="splash-status-text">
+          <span className="smart-pc-online-dot" />
+          <span>INITIALIZING SECURE HARDWARE…</span>
+        </div>
       </div>
     </main>
   );
 }
+

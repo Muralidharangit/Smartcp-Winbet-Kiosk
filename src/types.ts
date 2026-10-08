@@ -11,4 +11,6 @@ export type KioskConfig = {
   DepositRetryIntervalMs: number
   DepositMaxRetries: number
   KioskLockdown: boolean
+  Site_Name?: string
+  PC_Name?: string
 }
