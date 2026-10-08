@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { formatCurrency, launchProviderGame } from '../api/client'
 import type { GameDefinition } from '../games/catalog'
 import { loadTerminal } from '../lib/storage'
@@ -104,7 +105,7 @@ export function ProviderGamePanel({
 
   const providerName = (game.provider || (game.id.includes('SPRIBE') ? 'SPRIBE' : 'CASINO LIVE')).toUpperCase()
 
-  return (
+  return createPortal(
     <div className="game-launch-screen">
       {/* Top Game Launch Header (Rich Casino Theme) */}
       <header className="game-launch-header">
@@ -221,6 +222,7 @@ export function ProviderGamePanel({
           />
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

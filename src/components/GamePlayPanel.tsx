@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { formatCurrency, placeBet, type BetResult } from '../api/client'
 import { choiceLabel, type GameDefinition } from '../games/catalog'
 import { loadTerminal } from '../lib/storage'
@@ -108,7 +109,7 @@ export function GamePlayPanel({
       ? lastResult.result.split(' ')[0]
       : game.icon
 
-  return (
+  return createPortal(
     <div
       className="game-launch-screen"
       style={
@@ -261,6 +262,7 @@ export function GamePlayPanel({
           <p className="bet-hint">Lower your stake — balance is {formatCurrency(balance)}.</p>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
