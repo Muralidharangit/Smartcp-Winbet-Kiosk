@@ -53,6 +53,33 @@ export default function ArenaShell({
     };
   }, [ready]);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY =
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        document.querySelector('.winbet-app-layout')?.scrollTop ||
+        0;
+      setIsScrolled(scrollY > 15);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    const layout = document.querySelector('.winbet-app-layout');
+    if (layout) {
+      layout.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (layout) {
+        layout.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -76,7 +103,7 @@ export default function ArenaShell({
     <div className={`winbet-app-layout${ready ? '' : ' arena--empty is-zero-balance'}`}>
       <ZeroBalanceModal />
       {/* Top WINBET Header Bar */}
-      <header className="smart-pc-header-bar">
+      <header className={`smart-pc-header-bar ${isScrolled ? 'is-scrolled' : ''}`}>
         <div className="header-brand-wrap">
           <div className="brand-winbet-logo" onClick={() => navigate('/home')} role="button" tabIndex={0}>
             <span className="brand-win-part">WIN</span>

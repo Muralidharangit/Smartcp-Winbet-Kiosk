@@ -17,6 +17,7 @@
     "allow-print-test-ticket",
     "allow-enter-kiosk-mode",
     "allow-exit-kiosk-mode",
+    "allow-set-shop-available-coins",
     "core:window:allow-set-fullscreen",
     "core:window:allow-set-decorations",
     "core:window:allow-set-always-on-top",

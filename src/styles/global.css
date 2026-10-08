@@ -80,11 +80,16 @@ body.game-lobby-body,
   background: var(--navbar-bg);
   border-bottom: 1.5px solid var(--card-border);
   box-shadow: 0 4px 20px var(--card-border-glow), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  padding: 10px 24px;
+  padding: 27px 28px 16px 28px !important;
+  min-height: 84px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
   position: sticky;
-  top: 0;
+  
   z-index: 1000;
   width: 100%;
+ 
 }
 
 .brand-logo-wrap, .winbet-logo {
@@ -4098,18 +4103,53 @@ body.game-lobby-body,
 /* =========================================================================
    WINBET SMART PC HEADER (Exact Match to Image 2)
    ========================================================================= */
-.smart-pc-header-bar {
-  background: #0e0524;
+.smart-pc-header-bar,
+.winbet-topbar {
+  background: rgba(14, 5, 36, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1.5px solid #4d1d8f;
-  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.45);
-  padding: 10px 24px;
-  display: flex;
-  align-items: center;
+  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.35);
+  padding: 27px 28px 16px 28px !important;
+  min-height: 84px !important;
+  height: 84px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 1000;
   width: 100%;
+  transition: padding 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              min-height 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: padding, background, box-shadow;
+}
+
+/* Fixed Scrolled State Animation */
+.smart-pc-header-bar.is-scrolled {
+  background: rgba(8, 2, 22, 0.98) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  padding: 14px 28px 12px 28px !important;
+  min-height: 70px !important;
+  border-bottom: 1.5px solid rgba(168, 85, 247, 0.65) !important;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.85), 0 0 20px rgba(147, 51, 234, 0.45) !important;
+}
+
+.smart-pc-header-bar.is-scrolled .brand-winbet-logo {
+  transform: scale(0.96);
+  transition: transform 0.25s ease;
+}
+
+.smart-pc-header-bar.is-scrolled .smart-pc-capsule {
+  transform: scale(0.96);
+  box-shadow: 0 0 14px rgba(112, 26, 212, 0.4);
+  transition: all 0.25s ease;
 }
 
 .header-brand-wrap {
@@ -4122,6 +4162,7 @@ body.game-lobby-body,
   font-family: var(--font-heading, 'Inter', sans-serif);
   font-size: 1.7rem;
   font-weight: 900;
+  line-height: 1.2;
   letter-spacing: 1px;
   cursor: pointer;
   display: flex;
@@ -4553,20 +4594,20 @@ body.game-lobby-body,
 }
 
 .game-launch-header {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 27px 28px 16px 28px !important;
   background: linear-gradient(180deg, rgba(22, 8, 48, 0.98) 0%, rgba(10, 3, 24, 0.98) 100%);
   border-bottom: 2px solid rgba(147, 51, 234, 0.5);
   box-shadow: 0 4px 25px rgba(0, 0, 0, 0.8), 0 1px 12px rgba(120, 31, 245, 0.25), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
-  height: 64px;
-  min-height: 64px;
+  height: 84px !important;
+  min-height: 84px !important;
   z-index: 100;
   width: 100%;
   gap: 16px;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 /* --- Left Section --- */
@@ -4934,7 +4975,7 @@ body.game-lobby-body,
 .game-launch-body {
   flex: 1;
   width: 100%;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 84px) !important;
   position: relative;
   display: flex;
   align-items: center;

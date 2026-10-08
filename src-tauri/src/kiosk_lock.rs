@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager};
 /// Enter fullscreen kiosk mode on launch.
 pub fn engage(app: &AppHandle) {
   if let Some(win) = app.get_webview_window("main") {
-    let _ = win.set_resizable(true);
+    let _ = win.set_resizable(false);
     let _ = win.set_fullscreen(true);
     let _ = win.set_decorations(false);
     let _ = win.set_always_on_top(true);

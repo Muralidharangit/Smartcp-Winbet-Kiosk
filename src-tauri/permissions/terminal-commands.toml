@@ -47,3 +47,9 @@ commands.allow = ["enter_kiosk_mode"]
 identifier = "allow-exit-kiosk-mode"
 description = "Exit fullscreen kiosk with admin password."
 commands.allow = ["exit_kiosk_mode"]
+
+[[permission]]
+identifier = "allow-set-shop-available-coins"
+description = "Set available coins for bill acceptor."
+commands.allow = ["set_shop_available_coins"]
+

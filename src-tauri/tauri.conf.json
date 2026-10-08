@@ -1,6 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Betting Kiosk",
+  "mainBinaryName": "betting-kiosk",
   "version": "0.1.0",
   "identifier": "com.betwise.kiosk",
   "build": {
@@ -12,17 +13,19 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Betting Kiosk",
         "width": 1920,
         "height": 1080,
-        "resizable": true,
+        "resizable": false,
         "fullscreen": true,
         "decorations": false,
         "center": true,
         "alwaysOnTop": true,
-        "maximizable": true,
+        "maximizable": false,
         "minimizable": false,
-        "closable": false
+        "closable": false,
+        "focus": true
       }
     ],
     "security": {
@@ -31,7 +34,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -39,6 +42,19 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37",
+          "libgtk-3-0",
+          "libayatana-appindicator3-1 | libappindicator3-1",
+          "librsvg2-2",
+          "libssl3 | libssl1.1"
+        ],
+        "section": "utils",
+        "priority": "optional"
+      }
+    },
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }
