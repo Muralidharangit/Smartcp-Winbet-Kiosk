@@ -13,6 +13,7 @@ const MAX_GAMES_LIMIT = 200
 function mapAssigned(items: GameCatalogItem[], isAllGames = false) {
   return items
     .filter((game) => {
+      if (game.name?.toLowerCase().includes('mobile')) return false
       if (isAllGames) return true // All Games may include kind: "local", provider dummyGame
       return game.kind !== 'local' // Specific provider tab filters out non-provider local games
     })

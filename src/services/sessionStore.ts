@@ -25,6 +25,8 @@ type MachineState = {
   printerWarning: string | null;
   /** Staff hardware test open — do not bill-in or ticket-in. */
   installTestActive: boolean;
+  /** Explicit modal when user clicks a game with 0 balance */
+  showInsertMoneyModal: boolean;
   setConfig: (c: KioskConfig) => void;
   setMachineId: (id: string) => void;
   setBalance: (balance: number) => void;
@@ -36,6 +38,7 @@ type MachineState = {
   clearAlert: () => void;
   setPrinterWarning: (msg: string | null) => void;
   setInstallTestActive: (active: boolean) => void;
+  setShowInsertMoneyModal: (show: boolean) => void;
 };
 
 export const useMachine = create<MachineState>((set) => ({
@@ -49,10 +52,21 @@ export const useMachine = create<MachineState>((set) => ({
   alert: null,
   printerWarning: null,
   installTestActive: false,
+  showInsertMoneyModal: false,
   setConfig: (config) => set({ config }),
   setMachineId: (machineId) => set({ machineId }),
-  setBalance: (balance) => set({ balance }),
-  setLastCash: (lastCashAmount) => set({ lastCashAmount }),
+  setBalance: (balance) => {
+    const val = typeof balance === 'number' ? balance : parseFloat(String(balance ?? 0));
+    set({ balance: Number.isFinite(val) ? Math.max(0, val) : 0 });
+  },
+  setLastCash: (lastCashAmount) => {
+    if (lastCashAmount == null) {
+      set({ lastCashAmount: null });
+    } else {
+      const val = typeof lastCashAmount === 'number' ? lastCashAmount : parseFloat(String(lastCashAmount));
+      set({ lastCashAmount: Number.isFinite(val) ? Math.max(0, val) : 0 });
+    }
+  },
   setLastTicket: (lastTicketCode) => set({ lastTicketCode }),
   setCreditSource: (creditSource) => set({ creditSource }),
   setStatus: (statusMessage) => set({ statusMessage }),
@@ -60,4 +74,5 @@ export const useMachine = create<MachineState>((set) => ({
   clearAlert: () => set({ alert: null }),
   setPrinterWarning: (printerWarning) => set({ printerWarning }),
   setInstallTestActive: (installTestActive) => set({ installTestActive }),
+  setShowInsertMoneyModal: (showInsertMoneyModal) => set({ showInsertMoneyModal }),
 }));

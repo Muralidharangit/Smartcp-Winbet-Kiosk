@@ -7,19 +7,14 @@ import { getLiveHardwareId } from '../lib/storage'
 import { useMachine } from '../services/sessionStore'
 
 export default function GamesLobby() {
-  const { balance, machineId, showAlert, setBalance } = useMachine()
+  const { balance, machineId, showAlert, setBalance, setShowInsertMoneyModal } = useMachine()
   const [selected, setSelected] = useState<GameDefinition | null>(null)
   const [error, setError] = useState<string | null>(null)
   const locked = balance <= 0
 
   function selectGame(game: GameDefinition) {
     if (locked) {
-      showAlert({
-        tone: 'warn',
-        title: 'Games locked',
-        message: 'Insert cash or scan a credit ticket to unlock games.',
-        autoCloseMs: 0,
-      })
+      setShowInsertMoneyModal(true)
       return
     }
     setError(null)

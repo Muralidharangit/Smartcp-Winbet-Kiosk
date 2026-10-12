@@ -8,6 +8,7 @@ export default function CashInsertedScreen() {
   const [secondsLeft, setSecondsLeft] = useState(5)
 
   useEffect(() => {
+    setSecondsLeft(5)
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -19,13 +20,18 @@ export default function CashInsertedScreen() {
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [navigate])
+  }, [navigate, lastCashAmount, lastTicketCode, balance])
 
   const symbol = config?.CurrencySymbol ?? 'N$'
   const fromTicket = creditSource === 'ticket'
-  const amount = lastCashAmount ?? 0
+  const rawAmt = lastCashAmount ?? 0
+  const amount = typeof rawAmt === 'number' && Number.isFinite(rawAmt) ? rawAmt : parseFloat(String(rawAmt || 0)) || 0
+  const rawBal = balance ?? 0
+  const numBalance = typeof rawBal === 'number' && Number.isFinite(rawBal) ? rawBal : parseFloat(String(rawBal || 0)) || 0
+  const displayAmount = amount > 0 ? amount : (numBalance > 0 ? numBalance : 0)
   const modalCode = fromTicket ? '09' : '08'
   const modalBadgeTitle = fromTicket ? 'Ticket Voucher In' : 'Bill Acceptor'
+  const modalTitle = fromTicket ? 'VOUCHER TICKET CREDITED' : 'CASH LOADED SUCCESSFULLY'
 
   return (
     <div className="kx-alert-backdrop winbet-modal-backdrop" role="presentation">
@@ -33,20 +39,18 @@ export default function CashInsertedScreen() {
         className="winbet-modal-card icon-gold animate-pop-in cash-success-modal"
         role="alertdialog"
         aria-modal="true"
-        style={{ maxWidth: 480, width: '92vw' }}
+        style={{ maxWidth: 480, width: '92vw', textAlign: 'center' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Capsule Badge */}
-        <div className="winbet-modal-badge">
+        <div className="winbet-modal-badge" style={{ margin: '0 auto 14px auto' }}>
           <span className="modal-badge-num">{modalCode}</span>
           <span className="modal-badge-title">{modalBadgeTitle}</span>
-          <span className="modal-badge-status-pill">
-            <span className="smart-pc-online-dot" /> LIVE CREDITED
-          </span>
+          
         </div>
 
         {/* Glowing Circular Icon */}
-        <div className="winbet-modal-icon-glow icon-gold cash-icon-glow">
+        <div className="winbet-modal-icon-glow icon-gold cash-icon-glow" style={{ margin: '0 auto 12px auto' }}>
           <span className="modal-icon-symbol">
             {fromTicket ? (
               <i className="fa-solid fa-ticket" />
@@ -57,53 +61,17 @@ export default function CashInsertedScreen() {
         </div>
 
         {/* Title & Hero Amount */}
-        <h2 className="winbet-modal-title title-gold">
-          {fromTicket ? 'Ticket Voucher Accepted' : 'Currency Note Accepted'}
+        <h2 className="winbet-modal-title title-gold" style={{ textAlign: 'center', marginBottom: 4 }}>
+          {modalTitle}
         </h2>
 
-        <div className="deposited-amount-hero my-2">
+        <div className="deposited-amount-hero my-2" style={{ justifyContent: 'center', textAlign: 'center' }}>
           <span className="curr">+{symbol}</span>
-          <span className="amt">{amount.toFixed(2)}</span>
+          <span className="amt">{displayAmount.toFixed(2)}</span>
         </div>
 
         {/* Recessed Summary Box */}
-        <div className="winbet-modal-recessed-box cash-recessed-box">
-          <div className="recessed-row">
-            <span className="recessed-label">
-              <i className="fa-solid fa-circle-check text-warning me-1.5" /> Accepted Amount:
-            </span>
-            <span className="recessed-value status-highlight">
-              +{symbol} {amount.toFixed(2)}
-            </span>
-          </div>
-
-          <div className="recessed-row">
-            <span className="recessed-label">
-              <i className="fa-solid fa-coins text-cyan me-1.5" /> Updated Machine Balance:
-            </span>
-            <span className="recessed-value balance-highlight">
-              {symbol} {balance.toFixed(2)}
-            </span>
-          </div>
-
-          {fromTicket && lastTicketCode ? (
-            <div className="recessed-row">
-              <span className="recessed-label">
-                <i className="fa-solid fa-barcode text-muted me-1.5" /> Voucher Barcode:
-              </span>
-              <span className="recessed-value font-mono">{lastTicketCode}</span>
-            </div>
-          ) : null}
-
-          <div className="recessed-row">
-            <span className="recessed-label">
-              <i className="fa-solid fa-shield-halved text-success me-1.5" /> Session Status:
-            </span>
-            <span className="recessed-value status-ready">
-              <span className="smart-pc-online-dot" /> Ready to Play
-            </span>
-          </div>
-        </div>
+       
 
         {/* Modal Action Buttons */}
         <div className="winbet-modal-actions">
@@ -124,9 +92,9 @@ export default function CashInsertedScreen() {
         </div>
 
         {/* Countdown Auto-Forward Bar */}
-        <div className="cash-modal-countdown">
+        <div className="cash-modal-countdown" style={{ textAlign: 'center' }}>
           <span>Entering games lobby automatically in {secondsLeft}s</span>
-          <div className="countdown-bar-track">
+          <div className="countdown-bar-track" style={{ margin: '8px auto 0 auto' }}>
             <div
               className="countdown-bar-fill"
               style={{ width: `${(secondsLeft / 5) * 100}%` }}

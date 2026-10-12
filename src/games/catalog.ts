@@ -1,3 +1,5 @@
+import { API_ORIGIN } from '../config/env'
+
 export type GameDefinition = {
   id: string
   name: string
@@ -260,6 +262,24 @@ export const GAME_CATALOG: GameDefinition[] = [
     is_live: true,
   },
   {
+    id: 'crash_plane',
+    name: 'Crash Plane',
+    category: 'Crash & Instant',
+    description: 'Spribe Crash Plane — live multiplier flight game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🛩️',
+    accent: '#ef4444',
+    artFrom: '#991b1b',
+    artTo: '#0f172a',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/crash_plane.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
     id: 'lucky_6',
     name: 'Lucky 6',
     category: 'Hot',
@@ -485,6 +505,8 @@ export const SPRIBE_LOCAL_IMAGES: Record<string, string> = {
   multikeno: '/assets/games/SPRIBE/KENO80.png',
   pilot: '/assets/games/SPRIBE/PILOT.png',
   pilotchicken: '/assets/games/SPRIBE/PILOT.png',
+  crash_plane: '/assets/games/SPRIBE/crash_plane.png',
+  crashplane: '/assets/games/SPRIBE/crash_plane.png',
   trader: '/assets/games/SPRIBE/trader.png',
 }
 
@@ -507,6 +529,7 @@ export const LOBBY_PROVIDERS: LobbyProvider[] = [
       'balloon',
       'keno80',
       'pilot',
+      'crash_plane',
       'trader',
     ],
   },
@@ -565,7 +588,285 @@ export function providerKeyFromName(name: string): string {
 }
 
 export const GAME_FALLBACK_IMAGE = '/assets/img/placeholder.png'
-export const GAME_REMOTE_FALLBACK_IMAGE = 'https://staging.winbet.syscorp.in/assets/img/placeholder.png'
+
+export const SPRIBE_CATALOG_GAMES: GameDefinition[] = [
+  {
+    id: 'aviator',
+    name: 'Aviator',
+    category: 'Crash & Instant',
+    description: 'Spribe Aviator — live crash game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '✈️',
+    accent: '#ef4444',
+    artFrom: '#7f1d1d',
+    artTo: '#0f172a',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/AVIATOR.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_hot: true,
+    is_live: true,
+  },
+  {
+    id: 'dice',
+    name: 'Dice',
+    category: 'Table Games',
+    description: 'Spribe Dice — live crypto dice game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🎲',
+    accent: '#a855f7',
+    artFrom: '#581c87',
+    artTo: '#0f172a',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/DICE.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'goal',
+    name: 'Goal',
+    category: 'Crash & Instant',
+    description: 'Spribe Goal — live sports instant game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '⚽',
+    accent: '#22c55e',
+    artFrom: '#15803d',
+    artTo: '#064e3b',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/SOCCER.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'plinko',
+    name: 'Plinko',
+    category: 'Crash & Instant',
+    description: 'Spribe Plinko — live peg drop game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🔺',
+    accent: '#06b6d4',
+    artFrom: '#0369a1',
+    artTo: '#082f49',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/PLINKO.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'mines',
+    name: 'Mines',
+    category: 'Crash & Instant',
+    description: 'Spribe Mines — live minefield cash game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '💣',
+    accent: '#3b82f6',
+    artFrom: '#1e40af',
+    artTo: '#0f172a',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/MINES.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'hilo',
+    name: 'Hilo',
+    category: 'Table Games',
+    description: 'Spribe Hilo — live higher/lower card game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🂡',
+    accent: '#f59e0b',
+    artFrom: '#b45309',
+    artTo: '#451a03',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/HILO.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'keno',
+    name: 'Keno',
+    category: 'Table Games',
+    description: 'Spribe Keno — live lottery game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🎱',
+    accent: '#ec4899',
+    artFrom: '#9d174d',
+    artTo: '#1e1b4b',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/KENO.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'miniroulette',
+    name: 'Mini Roulette',
+    category: 'Table Games',
+    description: 'Spribe Mini Roulette — live European style wheel.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🎯',
+    accent: '#10b981',
+    artFrom: '#047857',
+    artTo: '#022c22',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/MINIROULETTE.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'hotline',
+    name: 'Hotline',
+    category: 'Crash & Instant',
+    description: 'Spribe Hotline — live high-speed hot reel game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🔥',
+    accent: '#6366f1',
+    artFrom: '#1e40af',
+    artTo: '#172554',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/HOTLINE.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'balloon',
+    name: 'Balloon',
+    category: 'Crash & Instant',
+    description: 'Spribe Balloon — hold & pump multiplier game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🎈',
+    accent: '#f43f5e',
+    artFrom: '#be123c',
+    artTo: '#4c0519',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/BALLON.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'keno80',
+    name: 'Multi Keno 80',
+    category: 'Table Games',
+    description: 'Spribe Keno 80 — 80 ball live instant lottery.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🎱',
+    accent: '#8b5cf6',
+    artFrom: '#6d28d9',
+    artTo: '#2e1065',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/KENO80.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'pilot',
+    name: 'Pilot Chicken',
+    category: 'Crash & Instant',
+    description: 'Spribe Pilot Chicken — live aviator adventure.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🐥',
+    accent: '#eab308',
+    artFrom: '#854d0e',
+    artTo: '#1c1917',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/PILOT.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'trader',
+    name: 'Trader',
+    category: 'Crash & Instant',
+    description: 'Spribe Trader — live market prediction game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '📈',
+    accent: '#eab308',
+    artFrom: '#713f12',
+    artTo: '#1c1917',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/trader.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+  {
+    id: 'crash_plane',
+    name: 'Crash Plane',
+    category: 'Crash & Instant',
+    description: 'Spribe Crash Plane — live multiplier flight game.',
+    payout_label: 'Live',
+    choices: [],
+    icon: '🛩️',
+    accent: '#ef4444',
+    artFrom: '#991b1b',
+    artTo: '#0f172a',
+    tagline: 'Spribe',
+    kind: 'provider',
+    image: '/assets/games/SPRIBE/crash_plane.png',
+    provider: 'Spribe',
+    providerKey: 'spribe',
+    is_live: true,
+  },
+]
+
+export function getSpribeImage(nameOrId?: string): string | undefined {
+  if (!nameOrId) return undefined
+  const clean = nameOrId.toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (!clean) return undefined
+
+  if (clean.includes('aviator')) return '/assets/games/SPRIBE/AVIATOR.png'
+  if (clean.includes('ballon') || clean.includes('balloon')) return '/assets/games/SPRIBE/BALLON.png'
+  if (clean.includes('crash') || clean.includes('plane')) return '/assets/games/SPRIBE/crash_plane.png'
+  if (clean.includes('dice')) return '/assets/games/SPRIBE/DICE.png'
+  if (clean.includes('hilo') || clean.includes('highlow') || clean.includes('helo')) return '/assets/games/SPRIBE/HILO.png'
+  if (clean.includes('hotline')) return '/assets/games/SPRIBE/HOTLINE.png'
+  if (clean.includes('keno80') || clean.includes('multikeno')) return '/assets/games/SPRIBE/KENO80.png'
+  if (clean.includes('keno')) return '/assets/games/SPRIBE/KENO.png'
+  if (clean.includes('mine')) return '/assets/games/SPRIBE/MINES.png'
+  if (clean.includes('roulette') || clean.includes('miniroulette')) return '/assets/games/SPRIBE/MINIROULETTE.png'
+  if (clean.includes('pilot') || clean.includes('chicken')) return '/assets/games/SPRIBE/PILOT.png'
+  if (clean.includes('plinko')) return '/assets/games/SPRIBE/PLINKO.png'
+  if (clean.includes('soccer') || clean.includes('goal')) return '/assets/games/SPRIBE/SOCCER.png'
+  if (clean.includes('trader')) return '/assets/games/SPRIBE/trader.png'
+
+  return SPRIBE_LOCAL_IMAGES[clean]
+}
 
 export function hydrateCatalogGame(item: {
   id: string
@@ -595,37 +896,32 @@ export function hydrateCatalogGame(item: {
     : item.provider ?? local?.provider ?? (isLocalKind ? 'dummyGame' : item.category ?? 'Provider')
 
   // Check if this game matches any dedicated Spribe asset
-  const cleanId = (item.id || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-  const cleanName = (item.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-  const isSpribeGame = provider.toLowerCase().includes('spribe') || cleanId.includes('spribe') || cleanName.includes('spribe')
-  
-  let spribeImg: string | undefined
-  if (isSpribeGame || local?.provider === 'Spribe') {
-    for (const [key, path] of Object.entries(SPRIBE_LOCAL_IMAGES)) {
-      if (cleanId === key || cleanName === key || cleanId.includes(key) || cleanName.includes(key)) {
-        spribeImg = path
-        break
-      }
-    }
-  }
+  const spribeImg = getSpribeImage(item.id) || getSpribeImage(item.name) || (local ? getSpribeImage(local.name) : undefined)
 
-  let rawImg =
-    spribeImg ||
-    item.image ||
-    item.image_url ||
-    item.game_image ||
-    (item as Record<string, unknown>).imageUrl as string ||
-    (item as Record<string, unknown>).gameImage as string ||
-    (item as Record<string, unknown>).banner as string ||
-    (item as Record<string, unknown>).thumbnail as string ||
-    (item as Record<string, unknown>).cover as string ||
-    (item as Record<string, unknown>).poster as string ||
-    (item as Record<string, unknown>).icon as string ||
-    item.images?.image ||
-    item.images?.logo ||
-    item.images?.banner ||
-    item.images?.thumbnail ||
-    local?.image
+  // If this is a Spribe game, ALWAYS strictly use the guaranteed local static image!
+  let rawImg: string | undefined
+  if (spribeImg) {
+    rawImg = spribeImg
+  } else {
+    // 1. Check API provided images
+    const apiImage =
+      item.image ||
+      item.image_url ||
+      item.game_image ||
+      (item as Record<string, unknown>).imageUrl as string ||
+      (item as Record<string, unknown>).gameImage as string ||
+      (item as Record<string, unknown>).banner as string ||
+      (item as Record<string, unknown>).thumbnail as string ||
+      (item as Record<string, unknown>).cover as string ||
+      (item as Record<string, unknown>).poster as string ||
+      (item as Record<string, unknown>).icon as string ||
+      item.images?.image ||
+      item.images?.thumbnail ||
+      item.images?.banner ||
+      item.images?.logo
+
+    rawImg = apiImage || local?.image
+  }
 
   if (typeof rawImg === 'string') {
     // Unescape JSON slashes if present (e.g., https:\/\/...)
@@ -634,10 +930,17 @@ export function hydrateCatalogGame(item: {
       rawImg = undefined
     } else if (rawImg.startsWith('//')) {
       rawImg = `https:${rawImg}`
-    } else if (!rawImg.startsWith('http://') && !rawImg.startsWith('https://') && !rawImg.startsWith('/assets/')) {
+    } else if (
+      !rawImg.startsWith('http://') &&
+      !rawImg.startsWith('https://') &&
+      !rawImg.startsWith('/assets/') &&
+      !rawImg.startsWith('/lobby/') &&
+      !rawImg.startsWith('/arena/')
+    ) {
+      const serverOrigin = (API_ORIGIN || 'https://staging.iccpanel.com/api').replace(/\/api\/?$/, '')
       rawImg = rawImg.startsWith('/')
-        ? `https://staging.winbet.syscorp.in${rawImg}`
-        : `https://staging.winbet.syscorp.in/${rawImg}`
+        ? `${serverOrigin}${rawImg}`
+        : `${serverOrigin}/${rawImg}`
     }
   }
 

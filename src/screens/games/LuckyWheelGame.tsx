@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BetStrip } from '../../components/BetStrip'
 import { useCredits } from '../../hooks/useCredits'
@@ -21,6 +21,13 @@ export default function LuckyWheelGame() {
   const [spinning, setSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
   const [result, setResult] = useState('')
+
+  useEffect(() => {
+    document.body.classList.add('is-game-active')
+    return () => {
+      document.body.classList.remove('is-game-active')
+    }
+  }, [])
 
   const gradient = useMemo(() => {
     const slice = 100 / SEGMENTS.length

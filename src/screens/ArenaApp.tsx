@@ -56,6 +56,7 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
     setMachineId,
     setBalance,
     showAlert,
+    clearAlert,
     setLastCash,
     setLastTicket,
     setCreditSource,
@@ -71,6 +72,9 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
   /** Ignore a second bill-in for the same note (StrictMode double listener / GBA escrow+stack). */
   const lastBillInAt = useRef(0)
   const lastBillInAmount = useRef<number | null>(null)
+  const redeemBusy = useRef(false)
+  const [showCashOutConfirm, setShowCashOutConfirm] = useState(false)
+  const [cashOutBusy, setCashOutBusy] = useState(false)
 
   useEffect(() => {
     setMachineId(terminal.machineId)
@@ -186,6 +190,12 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
       onLoadSuccess: (payload) => {
         const next = Number(payload.current_balance)
         if (Number.isFinite(next)) {
+          const currentBal = useMachine.getState().balance
+          const diff = next - currentBal
+          if (diff > 0) {
+            useMachine.getState().setLastCash(diff)
+            useMachine.getState().setCreditSource('cash')
+          }
           setBalance(next)
         }
         void getLiveHardwareId()
@@ -298,6 +308,91 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminal.machineId])
 
+  // Keyboard Policy:
+  // 1. In Lobby with 0 Balance (balance <= 0): Block general keyboard typing/navigation
+  //    to prevent tampering on public kiosk screens.
+  //    (Staff shortcuts Ctrl+Shift+K/D/R/H/L, staff password gates, and barcode scanner still work).
+  // 2. When Balance is updated (balance > 0): Keyboard is fully enabled for gameplay.
+  useEffect(() => {
+    function handleKioskKeyboardPolicy(e: KeyboardEvent) {
+      const currentBal = useMachine.getState().balance
+      // When balance > 0, keyboard is fully enabled for games
+      if (currentBal > 0) return
+
+      // Allow staff hotkeys (Ctrl+Shift+...)
+      if (e.ctrlKey && e.shiftKey) return
+
+      // Allow typing in active input/textarea fields (e.g. staff password modals)
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.closest('.winbet-modal-card') ||
+          target.closest('.pending-card') ||
+          target.closest('.hw-diag-modal'))
+      ) {
+        return
+      }
+
+      // If user is inside an active game (like Lucky Wheel or Aviator), allow game controls
+      if (document.body.classList.contains('is-game-active')) {
+        return
+      }
+
+      // Block non-staff browser/kiosk keys when in zero-balance lobby
+      if (
+        e.key === 'Tab' ||
+        e.key === ' ' ||
+        e.key === 'Spacebar' ||
+        e.key === 'Backspace' ||
+        e.key === 'Escape' ||
+        e.key.startsWith('Arrow') ||
+        (e.key.startsWith('F') && e.key.length <= 3) ||
+        e.key === 'Home' ||
+        e.key === 'End' ||
+        e.key === 'PageUp' ||
+        e.key === 'PageDown'
+      ) {
+        e.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', handleKioskKeyboardPolicy, false)
+    return () => window.removeEventListener('keydown', handleKioskKeyboardPolicy, false)
+  }, [])
+
+  // Ctrl+Shift+R shortcut:
+  // When balance is zero (<= 0), redirect to register page.
+  // When balance > 0, block reload and inform user to cash out first.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'R' || e.key === 'r')) {
+        e.preventDefault()
+        e.stopPropagation()
+        const currentBal = useMachine.getState().balance
+        if (currentBal <= 0) {
+          if (onRegisterToken) {
+            onRegisterToken()
+          } else {
+            onUnauthorized()
+          }
+        } else {
+          showAlert({
+            tone: 'warn',
+            title: 'Active Credit',
+            message: `Cannot open registration while balance is active (${config?.CurrencySymbol ?? 'N$'}${currentBal.toFixed(2)}). Please cash out first.`,
+            autoCloseMs: 4000,
+          })
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  }, [onRegisterToken, onUnauthorized, showAlert, config?.CurrencySymbol])
+
   async function acceptCash(amount: number): Promise<boolean> {
     if (useMachine.getState().installTestActive) {
       return false
@@ -314,13 +409,31 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
 
     try {
       const hardwareId = await getLiveHardwareId()
+      const previousBal = useMachine.getState().balance
       const result = await billIn(terminal.machineId, hardwareId, amount)
-      setBalance(result.current_balance)
+      clearAlert()
+      const creditedAmount = result.amount > 0 
+        ? result.amount 
+        : (result.current_balance > previousBal ? result.current_balance - previousBal : amount)
+      const bal = result.current_balance > 0 ? result.current_balance : previousBal + creditedAmount
+      setBalance(bal)
       if (result.available_coins != null) {
         void setShopAvailableCoins(result.available_coins)
       }
-      setLastCash(amount)
+      setLastCash(creditedAmount > 0 ? creditedAmount : amount)
       setCreditSource('cash')
+
+      void fetchSession(terminal.machineId, hardwareId)
+        .then((s) => {
+          if (s.current_balance != null && Number.isFinite(s.current_balance)) {
+            setBalance(s.current_balance)
+          }
+          if (s.available_coins != null) {
+            void setShopAvailableCoins(s.available_coins)
+          }
+        })
+        .catch(() => undefined)
+
       navigate('/cash-in')
       return true
     } catch (err) {
@@ -344,43 +457,70 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
 
   async function redeemTicket(code: string): Promise<boolean> {
     if (useMachine.getState().installTestActive) {
+      console.warn('[Barcode] Scan ignored: install test is active')
+      return false
+    }
+    if (redeemBusy.current) {
+      console.warn('[Barcode] Scan ignored: already processing a ticket')
       return false
     }
     const barcode = code.trim().toUpperCase()
     if (!barcode) return false
-    if (!(barcode.startsWith('T') || barcode.startsWith('TKT'))) {
-      showAlert({
-        tone: 'warn',
-        title: 'Not a credit ticket',
-        message: 'That is not a credit ticket. Insert cash, or scan a cash-out ticket.',
-        autoCloseMs: 0,
-      })
-      return false
-    }
+
+    console.info('[Barcode] Scanning ticket:', barcode)
+    redeemBusy.current = true
     try {
       const hardwareId = await getLiveHardwareId()
+      const previousBal = useMachine.getState().balance
       const result = await ticketIn(terminal.machineId, hardwareId, barcode)
-      setBalance(result.current_balance)
-      setLastCash(result.amount)
-      setLastTicket(result.barcode)
+      console.info('[Barcode] Ticket credited successfully:', result)
+      clearAlert()
+      const creditedAmount = result.amount > 0 
+        ? result.amount 
+        : (result.current_balance > previousBal ? result.current_balance - previousBal : 0)
+      const bal = result.current_balance > 0 ? result.current_balance : previousBal + (creditedAmount > 0 ? creditedAmount : 0)
+      setBalance(bal)
+      setLastCash(creditedAmount > 0 ? creditedAmount : (result.amount > 0 ? result.amount : (bal > 0 ? bal : null)))
+      setLastTicket(result.barcode || barcode)
       setCreditSource('ticket')
+
+      void fetchSession(terminal.machineId, hardwareId)
+        .then((s) => {
+          if (s.current_balance != null && Number.isFinite(s.current_balance)) {
+            setBalance(s.current_balance)
+          }
+          if (s.available_coins != null) {
+            void setShopAvailableCoins(s.available_coins)
+          }
+        })
+        .catch(() => undefined)
+
       navigate('/cash-in')
       return true
     } catch (err) {
+      console.error('[Barcode] Ticket redemption failed:', err)
       if (isHardwareUnauthorized(err)) {
         setHardwareBlocked(true)
         return false
       }
       const ticketMessage = friendlyMessage(err)
-      const isShopLow = ticketMessage.toLowerCase().includes('shop balance')
-      const isVoid = ticketMessage.toLowerCase().includes('void')
+      const lowMsg = ticketMessage.toLowerCase()
+      const isShopLow = lowMsg.includes('shop balance')
+      const isVoid =
+        lowMsg.includes('void') ||
+        lowMsg.includes('invalid') ||
+        lowMsg.includes('used') ||
+        lowMsg.includes('redeemed') ||
+        lowMsg.includes('not found')
       showAlert({
         tone: 'error',
         title: isShopLow ? 'Shop balance low' : isVoid ? 'Ticket Void / Invalid' : 'Ticket not accepted',
-        message: ticketMessage,
+        message: ticketMessage || 'This ticket could not be validated. Please check the ticket or ask staff.',
         autoCloseMs: 0,
       })
       return false
+    } finally {
+      redeemBusy.current = false
     }
   }
 
@@ -559,9 +699,6 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
     return <UnauthorizedScreen />
   }
 
-  const [showCashOutConfirm, setShowCashOutConfirm] = useState(false)
-  const [cashOutBusy, setCashOutBusy] = useState(false)
-
   const handleRequestCashOut = () => {
     if (balance <= 0) {
       showAlert({
@@ -587,11 +724,12 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
 
   const labEnabled = isHardwareSimulatorEnabled()
 
-  function withArena(node: ReactNode, opts?: { creditPanel?: boolean }) {
+  function withArena(node: ReactNode, opts?: { creditPanel?: boolean; hideHeader?: boolean }) {
     return (
       <ArenaShell
         onCashOut={handleRequestCashOut}
         showCreditPanel={opts?.creditPanel !== false}
+        hideHeader={opts?.hideHeader}
         printerReady={printerReady || labEnabled}
         onRegisterToken={onRegisterToken || onUnauthorized}
       >
@@ -632,7 +770,7 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
             <RequireCredit>
               <AviatorGame />
             </RequireCredit>,
-            { creditPanel: false },
+            { creditPanel: false, hideHeader: true },
           )}
         />
         <Route
@@ -641,7 +779,7 @@ export function ArenaApp({ terminal, onUnauthorized, onRegisterToken }: Props) {
             <RequireCredit>
               <LuckyWheelGame />
             </RequireCredit>,
-            { creditPanel: false },
+            { creditPanel: false, hideHeader: true },
           )}
         />
         <Route path="/cash-in" element={withArena(<CashInsertedScreen />, { creditPanel: false })} />

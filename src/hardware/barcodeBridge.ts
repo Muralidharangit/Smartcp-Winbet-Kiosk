@@ -76,7 +76,7 @@ function createWedgeScanner(options: WedgeOptions) {
         return 'reset'
       }
 
-      if (scanned === lastEmitted && now - lastEmittedAt < 2500) return 'ignored'
+      if (scanned === lastEmitted && now - lastEmittedAt < 1200) return 'ignored'
       lastEmitted = scanned
       lastEmittedAt = now
       wakeWindowUntil = 0
@@ -120,7 +120,7 @@ export function createBarcodeListener(
     }
 
     const result = wedge.pushKey(e.key, e.code)
-    if (result === 'char' || result === 'emit' || result === 'wake_miss') {
+    if (result !== 'ignored' || e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault()
       e.stopPropagation()
     }

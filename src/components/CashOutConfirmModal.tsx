@@ -1,4 +1,3 @@
-import { loadTerminal } from '../lib/storage';
 import { useMachine } from '../services/sessionStore';
 
 type Props = {
@@ -10,9 +9,6 @@ type Props = {
 
 export function CashOutConfirmModal({ isOpen, onConfirm, onCancel, loading = false }: Props) {
   const { balance, config } = useMachine();
-  const stored = loadTerminal();
-  const pcName = stored?.pcName || config?.PC_Name || config?.Terminal_ID || 'TERMINAL';
-  const siteName = stored?.siteName || config?.Site_Name || 'WINBET SHOP';
   const symbol = config?.CurrencySymbol ?? 'N$';
 
   if (!isOpen) {
@@ -63,11 +59,11 @@ export function CashOutConfirmModal({ isOpen, onConfirm, onCancel, loading = fal
               <i className="fa-solid fa-coins text-warning me-1.5" /> Cash-Out Amount:
             </span>
             <span className="recessed-value status-highlight" style={{ fontSize: '1.15rem' }}>
-              {symbol} {balance.toFixed(2)}
+              {symbol} {Number(balance || 0).toFixed(2)}
             </span>
           </div>
 
-          <div className="recessed-row">
+          {/* <div className="recessed-row">
             <span className="recessed-label">
               <i className="fa-solid fa-desktop text-cyan me-1.5" /> Station:
             </span>
@@ -79,7 +75,7 @@ export function CashOutConfirmModal({ isOpen, onConfirm, onCancel, loading = fal
               <i className="fa-solid fa-receipt text-muted me-1.5" /> Print Output:
             </span>
             <span className="recessed-value text-success">Epson Thermal Printer</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Modal Action Buttons */}

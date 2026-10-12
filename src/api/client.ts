@@ -375,11 +375,44 @@ export async function launchProviderGame(
     }),
   })
 
-  const body = await parseJson<ApiSuccess<ProviderLaunchResult> | ApiError>(response)
+  const body = await parseJson<ApiSuccess<ProviderLaunchResult | string> | ApiError>(response)
   if (!body.success) {
-    throw new TerminalApiError(body.message, response.status)
+    throw new TerminalApiError(body.message || 'Game launch failed', response.status)
   }
-  return body.data
+
+  let game_url = ''
+  let game_name = ''
+  let provider = ''
+  let player_id = 0
+
+  if (typeof body.data === 'string') {
+    game_url = body.data
+  } else if (body.data && typeof body.data === 'object') {
+    const d = body.data as Record<string, unknown>
+    game_url = String(d.game_url ?? d.url ?? d.launch_url ?? d.link ?? d.gameUrl ?? '')
+    game_name = String(d.game_name ?? d.name ?? '')
+    provider = String(d.provider ?? '')
+    player_id = Number(d.player_id ?? 0)
+  }
+
+  if (!game_url) {
+    const raw = body as unknown as Record<string, unknown>
+    game_url = String(raw.game_url ?? raw.url ?? raw.launch_url ?? raw.link ?? '')
+    if (raw.game_name) game_name = String(raw.game_name)
+    if (raw.provider) provider = String(raw.provider)
+  }
+
+  if (!game_url || !game_url.startsWith('http')) {
+    throw new TerminalApiError(body.message || 'Game launch URL was invalid or missing from server response', 500)
+  }
+
+  return {
+    game_url,
+    game_name,
+    provider,
+    game_id: game,
+    player_id,
+  }
 }
 
 export async function placeBet(
@@ -453,7 +486,16 @@ export async function billIn(
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }
-  return body.data
+  const d = ((body as ApiSuccess<BillInResult>).data || body) as Record<string, unknown>
+  const current_balance = Number(d.current_balance ?? d.balance ?? 0)
+  const accepted_amount = Number(d.amount ?? amount)
+  return {
+    machine_id: String(d.machine_id ?? machineId),
+    amount: Number.isFinite(accepted_amount) ? accepted_amount : amount,
+    current_balance: Number.isFinite(current_balance) ? current_balance : 0,
+    status: String(d.status ?? 'OK'),
+    available_coins: d.available_coins != null ? Number(d.available_coins) : undefined,
+  }
 }
 
 /** Cash-out: clear balance and issue a printable barcode ticket. */
@@ -500,7 +542,13 @@ export async function cancelCashOutTicket(
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }
-  return body.data
+  const d = ((body as ApiSuccess<{ barcode: string; amount: number; current_balance: number; message: string }>).data || body) as Record<string, unknown>
+  return {
+    barcode: String(d.barcode ?? barcode),
+    amount: Number(d.amount ?? 0),
+    current_balance: Number(d.current_balance ?? d.balance ?? 0),
+    message: String(d.message ?? body.message ?? 'Ticket restored'),
+  }
 }
 
 /** Ticket-in: scan barcode on kiosk scanner → credit this kiosk. */
@@ -523,7 +571,17 @@ export async function ticketIn(
   if (!body.success) {
     throw new TerminalApiError(body.message, response.status)
   }
-  return body.data
+  const d = ((body as ApiSuccess<TicketInResult>).data || body) as Record<string, unknown>
+  const ticketObj = (d.ticket && typeof d.ticket === 'object') ? (d.ticket as Record<string, unknown>) : null
+  const current_balance = Number(d.current_balance ?? d.balance ?? d.new_balance ?? ticketObj?.current_balance ?? 0)
+  const amount = Number(d.amount ?? d.credit ?? d.ticket_amount ?? d.redeemed_amount ?? d.value ?? ticketObj?.amount ?? ticketObj?.value ?? 0)
+  return {
+    barcode: String(d.barcode ?? ticketObj?.barcode ?? barcode),
+    amount: Number.isFinite(amount) ? amount : 0,
+    current_balance: Number.isFinite(current_balance) ? current_balance : 0,
+    status: String(d.status ?? 'OK'),
+    message: String(d.message ?? body.message ?? 'Ticket redeemed'),
+  }
 }
 
 export type CreditAdjustResult = {

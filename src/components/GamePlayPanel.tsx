@@ -17,7 +17,7 @@ type Props = {
 
 const STAKES = [10, 25, 50, 100, 200] as const
 const SPIN_MS = 1400
-const FALLBACK_PLACEHOLDER = 'https://staging.winbet.syscorp.in/assets/img/placeholder.png'
+const FALLBACK_PLACEHOLDER = '/assets/img/placeholder.png'
 
 function stageKind(gameId: string): 'roulette' | 'coin' | 'dice' | 'cards' | 'sport' | 'wheel' | 'number' {
   if (gameId === 'roulette') return 'roulette'
@@ -55,6 +55,14 @@ export function GamePlayPanel({
 
   const stored = loadTerminal()
   const terminalName = stored?.pcName || stored?.hostname || machineId || 'CABIN-01'
+
+  // Body active game lifecycle to hide home header
+  useEffect(() => {
+    document.body.classList.add('is-game-active')
+    return () => {
+      document.body.classList.remove('is-game-active')
+    }
+  }, [])
 
   useEffect(() => {
     const updateTime = () => {

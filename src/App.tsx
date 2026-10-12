@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import type { TerminalRegistration } from './api/client'
 import { clearPortalSlug, setPortalSlug } from './config/env'
 import {
   clearTerminal,
-  isTauriApp,
   loadTerminal,
   saveTerminal,
   type StoredTerminal,
@@ -79,14 +78,6 @@ export default function App() {
         <StaffExitGate />
         <HardwareTestGate />
         <div className="app-shell">
-          <header className="winbet-topbar">
-            <div className="winbet-brand">
-              <span className="winbet-brand-text">WINBET</span>
-            </div>
-            <div className="terminal-name" style={{ color: '#c4b5fd', fontSize: '0.85rem' }}>
-              <span>{isTauriApp() ? 'Tauri + Rust — Cabinet Mode' : 'Browser Dev Mode'}</span>
-            </div>
-          </header>
           <RegistrationScreen
             onRegistered={handleRegistered}
             onCancel={terminal ? handleCancelRegistration : undefined}
@@ -97,7 +88,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <StaffExitGate />
       <HardwareTestGate />
       <ArenaApp
@@ -105,6 +96,6 @@ export default function App() {
         onUnauthorized={handleResetRegistration}
         onRegisterToken={handleOpenRegistration}
       />
-    </BrowserRouter>
+    </HashRouter>
   )
 }

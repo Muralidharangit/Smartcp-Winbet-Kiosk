@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
+  GAME_FALLBACK_IMAGE,
   HOME_GAMES,
+  SPRIBE_CATALOG_GAMES,
+  getSpribeImage,
   type GameDefinition,
   type LobbyProvider,
 } from '../games/catalog'
@@ -11,13 +14,10 @@ import { useMachine } from '../services/sessionStore'
 type LobbyTab =
   | 'all'
   | 'spribe'
-  | 'endorphina'
-  | 'kagaming'
-  | 'evoplay'
+  | 'providers'
   | 'slots'
   | 'crash'
-  | 'table'
-  | 'providers'
+  | 'live'
   | string
 
 type Props = {
@@ -110,9 +110,6 @@ function ProviderLogoItem({
   )
 }
 
-const GAME_FALLBACK_IMAGE = '/assets/img/placeholder.png'
-const GAME_REMOTE_FALLBACK_IMAGE = 'https://staging.winbet.syscorp.in/assets/img/placeholder.png'
-
 function GameTile({
   game,
   disabled,
@@ -122,26 +119,29 @@ function GameTile({
   disabled: boolean
   onSelect: (game: GameDefinition) => void
 }) {
-  const validInitial = (game.image && typeof game.image === 'string' && game.image.trim() !== '' && game.image !== 'null' && game.image !== 'undefined')
-    ? game.image.trim()
-    : GAME_FALLBACK_IMAGE
+  const [failed, setFailed] = useState(false)
 
-  const [imgSrc, setImgSrc] = useState<string>(validInitial)
+  const spribeImage = getSpribeImage(game.name) || getSpribeImage(game.id)
+  const effectiveImage = spribeImage || game.image || GAME_FALLBACK_IMAGE
 
   useEffect(() => {
-    const next = (game.image && typeof game.image === 'string' && game.image.trim() !== '' && game.image !== 'null' && game.image !== 'undefined')
-      ? game.image.trim()
-      : GAME_FALLBACK_IMAGE
-    setImgSrc(next)
-  }, [game.image])
+    setFailed(false)
+  }, [game.id, effectiveImage])
 
   const theme = getCardTheme(game)
   const actionLabel = getGameActionLabel(game)
+  const hasValidImage = Boolean(
+    effectiveImage &&
+      effectiveImage.trim() !== '' &&
+      effectiveImage !== 'null' &&
+      effectiveImage !== 'undefined' &&
+      effectiveImage !== GAME_FALLBACK_IMAGE,
+  )
 
   return (
     <div
       className="chamfer-card-wrapper"
-      onClick={() => !disabled && onSelect(game)}
+      onClick={() => onSelect(game)}
     >
       <div className={`chamfer-casino-card theme-${theme}${disabled ? ' is-disabled' : ''}`}>
         <div className="chamfer-border-wrap">
@@ -154,21 +154,25 @@ function GameTile({
             </div>
 
             <div className="chamfer-artwork-frame">
+              {/* Static placeholder always present underneath */}
               <img
-                className="chamfer-poster-img"
-                src={imgSrc || GAME_FALLBACK_IMAGE}
-                alt={game.name}
-                loading="lazy"
-                onError={(e) => {
-                  const target = e.currentTarget
-                  if (!target.src.includes(GAME_FALLBACK_IMAGE)) {
-                    target.src = GAME_FALLBACK_IMAGE
-                    setImgSrc(GAME_FALLBACK_IMAGE)
-                  } else if (target.src !== GAME_REMOTE_FALLBACK_IMAGE) {
-                    target.src = GAME_REMOTE_FALLBACK_IMAGE
-                  }
-                }}
+                className="chamfer-poster-img chamfer-placeholder-base"
+                src={GAME_FALLBACK_IMAGE}
+                alt=""
+                aria-hidden="true"
               />
+              {/* Live dynamic game image on top */}
+              {hasValidImage && !failed && (
+                <img
+                  className="chamfer-poster-img chamfer-dynamic-img is-loaded"
+                  src={effectiveImage}
+                  alt={game.name}
+                  loading="eager"
+                  onError={() => {
+                    setFailed(true)
+                  }}
+                />
+              )}
             </div>
 
             <div className="chamfer-bottom-vignette" />
@@ -183,7 +187,7 @@ function GameTile({
                 className="btn-card-action"
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (!disabled) onSelect(game)
+                  onSelect(game)
                 }}
               >
                 {actionLabel}
@@ -222,7 +226,7 @@ function LiveRecentWinnersFeed() {
   }
 
   return (
-    <div className="winners-feed-master-card mb-3">
+    <div className="winners-feed-master-card mb-2">
       <div className="winners-feed-header-bar">
         <div className="winners-feed-title-wrap">
           <span className="live-feed-dot" />
@@ -306,19 +310,20 @@ type SpribePickItem = {
 }
 
 const SPRIBE_FEATURED_PICKS: SpribePickItem[] = [
-  { id: 'aviator', name: 'Aviator', image: '/assets/games/SPRIBE/AVIATOR.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-dark' },
-  { id: 'dice', name: 'Dice', image: '/assets/games/SPRIBE/DICE.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-purple' },
+  { id: 'aviator', name: 'Aviator', image: '/assets/games/SPRIBE/AVIATOR.png', actionText: 'FLY NOW ›', theme: 'theme-spribe-dark' },
+  { id: 'dice', name: 'Dice', image: '/assets/games/SPRIBE/DICE.png', actionText: 'ROLL NOW ›', theme: 'theme-spribe-purple' },
   { id: 'goal', name: 'Goal', image: '/assets/games/SPRIBE/SOCCER.png', actionText: 'KICK NOW ›', theme: 'theme-spribe-green' },
   { id: 'plinko', name: 'Plinko', image: '/assets/games/SPRIBE/PLINKO.png', actionText: 'DROP NOW ›', theme: 'theme-spribe-cyan' },
   { id: 'mines', name: 'Mines', image: '/assets/games/SPRIBE/MINES.png', actionText: 'MINE NOW ›', theme: 'theme-spribe-blue' },
-  { id: 'hilo', name: 'Hilo', image: '/assets/games/SPRIBE/HILO.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-gold' },
+  { id: 'hilo', name: 'Hilo', image: '/assets/games/SPRIBE/HILO.png', actionText: 'DEAL NOW ›', theme: 'theme-spribe-gold' },
   { id: 'keno', name: 'Keno', image: '/assets/games/SPRIBE/KENO.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-emerald' },
   { id: 'miniroulette', name: 'Mini Roulette', image: '/assets/games/SPRIBE/MINIROULETTE.png', actionText: 'SPIN NOW ›', theme: 'theme-spribe-green' },
   { id: 'hotline', name: 'Hotline', image: '/assets/games/SPRIBE/HOTLINE.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-indigo' },
-  { id: 'balloon', name: 'Balloon', image: '/assets/games/SPRIBE/BALLON.png', actionText: 'FLY NOW ›', theme: 'theme-spribe-purple' },
-  { id: 'keno80', name: 'Multi Keno', image: '/assets/games/SPRIBE/KENO80.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-indigo' },
-  { id: 'pilot', name: 'Pilot Chicken', image: '/assets/games/SPRIBE/PILOT.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-gold' },
-  { id: 'trader', name: 'Trader', image: '/assets/games/SPRIBE/trader.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-dark' },
+  { id: 'balloon', name: 'Balloon', image: '/assets/games/SPRIBE/BALLON.png', actionText: 'PUMP NOW ›', theme: 'theme-spribe-purple' },
+  { id: 'keno80', name: 'Multi Keno 80', image: '/assets/games/SPRIBE/KENO80.png', actionText: 'PLAY NOW ›', theme: 'theme-spribe-indigo' },
+  { id: 'pilot', name: 'Pilot Chicken', image: '/assets/games/SPRIBE/PILOT.png', actionText: 'FLY NOW ›', theme: 'theme-spribe-gold' },
+  { id: 'crash_plane', name: 'Crash Plane', image: '/assets/games/SPRIBE/crash_plane.png', actionText: 'FLY NOW ›', theme: 'theme-spribe-dark' },
+  { id: 'trader', name: 'Trader', image: '/assets/games/SPRIBE/trader.png', actionText: 'TRADE NOW ›', theme: 'theme-spribe-dark' },
 ]
 
 function SpribeFeaturedSlider({
@@ -335,15 +340,27 @@ function SpribeFeaturedSlider({
   const sliderRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
 
+  const getCardStep = () => {
+    const el = sliderRef.current
+    if (!el) return 160
+    const firstCard = el.querySelector('.spribe-slider-card') as HTMLElement | null
+    if (firstCard) {
+      const style = window.getComputedStyle(el)
+      const gap = parseFloat(style.gap) || 12
+      return firstCard.offsetWidth + gap
+    }
+    return 160
+  }
+
   // Auto-move mechanism: smoothly scrolls forward every 2600ms, loops when reaching the end
   useEffect(() => {
-    if (isHovered || disabled) return
+    if (isHovered) return
 
     const interval = setInterval(() => {
       const el = sliderRef.current
       if (!el) return
 
-      const cardWidth = 166 // 154px card + 12px gap
+      const cardWidth = getCardStep()
       const maxScroll = el.scrollWidth - el.clientWidth
       if (el.scrollLeft >= maxScroll - 6) {
         el.scrollTo({ left: 0, behavior: 'smooth' })
@@ -353,11 +370,11 @@ function SpribeFeaturedSlider({
     }, 2600)
 
     return () => clearInterval(interval)
-  }, [isHovered, disabled])
+  }, [isHovered])
 
   const scrollLeft = () => {
     if (sliderRef.current) {
-      sliderRef.current.scrollBy({ left: -166, behavior: 'smooth' })
+      sliderRef.current.scrollBy({ left: -getCardStep(), behavior: 'smooth' })
     }
   }
 
@@ -367,7 +384,7 @@ function SpribeFeaturedSlider({
       if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 6) {
         el.scrollTo({ left: 0, behavior: 'smooth' })
       } else {
-        el.scrollBy({ left: 166, behavior: 'smooth' })
+        el.scrollBy({ left: getCardStep(), behavior: 'smooth' })
       }
     }
   }
@@ -410,7 +427,7 @@ function SpribeFeaturedSlider({
 
   return (
     <div
-      className="spribe-featured-slider-master mb-3"
+      className="spribe-featured-slider-master mb-2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
@@ -462,7 +479,7 @@ function SpribeFeaturedSlider({
             <div
               key={pick.id}
               className={`spribe-slider-card ${pick.theme || 'theme-spribe-purple'}${disabled ? ' is-disabled' : ''}`}
-              onClick={() => !disabled && onSelect(game)}
+              onClick={() => onSelect(game)}
             >
               <div className="spribe-card-top-neon" />
               <div className="spribe-card-badge-row">
@@ -471,14 +488,14 @@ function SpribeFeaturedSlider({
 
               <div className="spribe-card-art-area">
                 <img
-                  src={pick.image}
+                  src={pick.image || GAME_FALLBACK_IMAGE}
                   alt={pick.name}
                   className="spribe-card-poster-img"
                   loading="lazy"
                   onError={(e) => {
-                    if (e.currentTarget.src !== GAME_FALLBACK_IMAGE) {
-                      e.currentTarget.src = GAME_FALLBACK_IMAGE
-                    }
+                    const target = e.currentTarget
+                    target.onerror = null
+                    target.src = GAME_FALLBACK_IMAGE
                   }}
                 />
               </div>
@@ -491,7 +508,7 @@ function SpribeFeaturedSlider({
                   className="btn-spribe-card-action"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (!disabled) onSelect(game)
+                    onSelect(game)
                   }}
                 >
                   {pick.actionText}
@@ -588,11 +605,21 @@ function LiveCasinoGameModal({
   onClose: () => void
   onLaunch: (game: GameDefinition) => void
 }) {
-  const [imgSrc, setImgSrc] = useState<string>(game.image || GAME_FALLBACK_IMAGE)
+  const [failed, setFailed] = useState(false)
+  const spribeImage = getSpribeImage(game.name) || getSpribeImage(game.id)
+  const effectiveImage = spribeImage || game.image || GAME_FALLBACK_IMAGE
 
   useEffect(() => {
-    setImgSrc(game.image || GAME_FALLBACK_IMAGE)
-  }, [game.image])
+    setFailed(false)
+  }, [game.id, effectiveImage])
+
+  const hasValidImage = Boolean(
+    effectiveImage &&
+      effectiveImage.trim() !== '' &&
+      effectiveImage !== 'null' &&
+      effectiveImage !== 'undefined' &&
+      effectiveImage !== GAME_FALLBACK_IMAGE,
+  )
 
   return (
     <div className="kx-alert-backdrop winbet-modal-backdrop" onClick={onClose}>
@@ -605,16 +632,22 @@ function LiveCasinoGameModal({
         </button>
 
         <div className="modal-game-poster-section">
+          {/* Static placeholder underneath */}
           <img
-            src={imgSrc}
-            alt={game.name}
-            className="modal-game-poster-img"
-            onError={() => {
-              if (imgSrc !== GAME_FALLBACK_IMAGE) {
-                setImgSrc(GAME_FALLBACK_IMAGE)
-              }
-            }}
+            src={GAME_FALLBACK_IMAGE}
+            alt=""
+            className="modal-game-poster-img modal-placeholder-base"
           />
+          {/* Dynamic image on top */}
+          {hasValidImage && !failed && (
+            <img
+              src={effectiveImage}
+              alt={game.name}
+              className="modal-game-poster-img modal-dynamic-img is-loaded"
+              loading="eager"
+              onError={() => setFailed(true)}
+            />
+          )}
           <div className="modal-poster-overlay-badge">
             <span className="chamfer-badge badge-live">
               {game.payout_label || 'LIVE'}
@@ -678,9 +711,8 @@ export function BettingLobby({
   offline = false,
   playSlot,
   onLeaveGame,
-  onCashOut,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<LobbyTab>('all')
+  const [activeTab, setActiveTab] = useState<LobbyTab>('spribe')
   const [selectedProviderKey, setSelectedProviderKey] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [previewGame, setPreviewGame] = useState<GameDefinition | null>(null)
@@ -730,36 +762,12 @@ export function BettingLobby({
   // Handle switching tabs
   const handleTabChange = (tab: LobbyTab) => {
     setActiveTab(tab)
-    if (tab === 'all') {
-      setSelectedProviderKey(null)
-    } else if (tab === 'providers') {
-      setSelectedProviderKey(null)
-    } else if (tab === 'spribe' || tab === 'endorphina' || tab === 'kagaming' || tab === 'evoplay') {
-      const directProv = providers.find((p) => {
-        const pName = p.name.toLowerCase()
-        const pKey = p.key.toLowerCase()
-        if (tab === 'spribe') return pName.includes('spribe') || pKey.includes('spribe')
-        if (tab === 'endorphina') return pName.includes('endorphina') || pKey.includes('endorphina')
-        if (tab === 'kagaming') return pName.includes('ka') || pKey.includes('ka') || pName.includes('king')
-        if (tab === 'evoplay') return pName.includes('evoplay') || pKey.includes('evoplay')
-        return false
-      })
-      if (directProv) {
-        setSelectedProviderKey(directProv.key)
-        if (!(gamesByProvider[directProv.name]?.length)) {
-          void loadProviderGames(directProv.name, 1)
-        }
-      } else {
-        setSelectedProviderKey(null)
-      }
-    } else {
-      setSelectedProviderKey(null)
-    }
+    setSelectedProviderKey(null)
     onLeaveGame?.()
   }
 
   const resetFilters = () => {
-    setActiveTab('all')
+    setActiveTab('spribe')
     setSelectedProviderKey(null)
     setSearchQuery('')
     onLeaveGame?.()
@@ -782,12 +790,17 @@ export function BettingLobby({
 
     if (!selectedProvider) {
       if (activeTab === 'spribe') {
-        list = list.filter((g) => {
+        const map = new Map<string, GameDefinition>()
+        // 1. Seed with the 14 guaranteed static Spribe games (all with local /assets/games/SPRIBE/ images)
+        SPRIBE_CATALOG_GAMES.forEach((g) => map.set(g.id.toLowerCase(), g))
+
+        // 2. If list contains API games for Spribe, merge launcher data without overwriting the static image
+        list.forEach((g) => {
           const prov = (g.provider || '').toLowerCase()
           const tag = (g.tagline || '').toLowerCase()
           const id = (g.id || '').toLowerCase()
           const name = (g.name || '').toLowerCase()
-          return (
+          const isSpribe =
             prov.includes('spribe') ||
             tag.includes('spribe') ||
             id.includes('spribe') ||
@@ -796,25 +809,50 @@ export function BettingLobby({
             name.includes('mines') ||
             name.includes('goal') ||
             name.includes('hilo') ||
-            name.includes('hotline')
-          )
+            name.includes('hotline') ||
+            name.includes('balloon') ||
+            name.includes('keno') ||
+            name.includes('pilot') ||
+            name.includes('trader') ||
+            name.includes('crash')
+
+          if (!isSpribe) return
+
+          const cleanName = name.replace(/[^a-z0-9]/g, '')
+          let matchedKey: string | undefined
+          for (const [key, val] of map.entries()) {
+            if (key === id || val.name.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanName) {
+              matchedKey = key
+              break
+            }
+          }
+
+          const staticImg = getSpribeImage(g.name) || getSpribeImage(g.id)
+          if (matchedKey) {
+            const existing = map.get(matchedKey)!
+            map.set(matchedKey, {
+              ...existing,
+              ...g,
+              image: staticImg || existing.image,
+              kind: 'provider',
+              provider: 'Spribe',
+            })
+          } else {
+            map.set(id, {
+              ...g,
+              image: staticImg || g.image || GAME_FALLBACK_IMAGE,
+              kind: 'provider',
+              provider: 'Spribe',
+            })
+          }
         })
-      } else if (activeTab === 'endorphina') {
-        list = list.filter((g) => (g.provider || '').toLowerCase().includes('endorphina') || (g.tagline || '').toLowerCase().includes('endorphina'))
-      } else if (activeTab === 'kagaming') {
-        list = list.filter((g) => (g.provider || '').toLowerCase().includes('ka') || (g.tagline || '').toLowerCase().includes('ka') || (g.provider || '').toLowerCase().includes('king'))
-      } else if (activeTab === 'evoplay') {
-        list = list.filter((g) => (g.provider || '').toLowerCase().includes('evoplay') || (g.tagline || '').toLowerCase().includes('evoplay'))
+        list = Array.from(map.values())
       } else if (activeTab === 'slots') {
         list = list.filter((g) => (g.category || '').toLowerCase().includes('slot') || (g.name || '').toLowerCase().includes('spin') || (g.name || '').toLowerCase().includes('reel'))
       } else if (activeTab === 'crash') {
         list = list.filter((g) => (g.category || '').toLowerCase().includes('crash') || (g.category || '').toLowerCase().includes('instant') || (g.name || '').toLowerCase().includes('aviator') || (g.name || '').toLowerCase().includes('rocket') || (g.name || '').toLowerCase().includes('balloon'))
-      } else if (activeTab === 'table') {
-        list = list.filter((g) => (g.category || '').toLowerCase().includes('table') || (g.category || '').toLowerCase().includes('card') || (g.category || '').toLowerCase().includes('dice') || (g.name || '').toLowerCase().includes('dice') || (g.name || '').toLowerCase().includes('roulette') || (g.name || '').toLowerCase().includes('poker'))
       } else if (activeTab === 'live') {
         list = list.filter((g) => g.is_live || (g.category || '').toLowerCase().includes('live') || (g.provider || '').toLowerCase().includes('live'))
-      } else if (activeTab === 'sports') {
-        list = list.filter((g) => (g.category || '').toLowerCase().includes('sport') || (g.name || '').toLowerCase().includes('goal') || (g.name || '').toLowerCase().includes('soccer') || (g.name || '').toLowerCase().includes('sports'))
       }
     }
 
@@ -913,7 +951,16 @@ export function BettingLobby({
               <span>ALL GAMES</span>
             </div>
 
-            {/* 2. PROVIDERS */}
+            {/* 2. SPRIBE (Initially Active) */}
+            <div
+              className={`cat-pill${activeTab === 'spribe' ? ' active' : ''}`}
+              onClick={() => handleTabChange('spribe')}
+            >
+              <i className="fa-solid fa-plane"></i>
+              <span>SPRIBE</span>
+            </div>
+
+            {/* 3. PROVIDERS */}
             <div
               className={`cat-pill${activeTab === 'providers' ? ' active' : ''}`}
               onClick={() => handleTabChange('providers')}
@@ -922,7 +969,7 @@ export function BettingLobby({
               <span>PROVIDERS</span>
             </div>
 
-            {/* 3. SLOTS */}
+            {/* 4. SLOTS */}
             <div
               className={`cat-pill${activeTab === 'slots' ? ' active' : ''}`}
               onClick={() => handleTabChange('slots')}
@@ -931,22 +978,13 @@ export function BettingLobby({
               <span>SLOTS</span>
             </div>
 
-            {/* 4. CRASH & INSTANT */}
+            {/* 5. CRASH & INSTANT */}
             <div
               className={`cat-pill${activeTab === 'crash' ? ' active' : ''}`}
               onClick={() => handleTabChange('crash')}
             >
               <i className="fa-solid fa-bolt"></i>
               <span>CRASH &amp; INSTANT</span>
-            </div>
-
-            {/* 5. TABLE GAMES */}
-            <div
-              className={`cat-pill${activeTab === 'table' ? ' active' : ''}`}
-              onClick={() => handleTabChange('table')}
-            >
-              <i className="fa-solid fa-dice"></i>
-              <span>TABLE GAMES</span>
             </div>
 
             {/* 6. LIVE CASINO */}
@@ -1237,100 +1275,7 @@ export function BettingLobby({
           {/* ==========================================================================
               4. WINBET FOOTER SECTION WITH ACTION BAR (Exact Match to Concept)
               ========================================================================== */}
-          <div className="kiosk-footer-container mt-4 mb-3">
-            {/* Top Action Bar with Shop Pill and Gold Cash Out Button */}
-            <div className="kiosk-footer-action-bar">
-              <div className="footer-shop-pill">
-                <span className="footer-shop-icon">
-                  <i className="fa-solid fa-store"></i>
-                </span>
-                <span className="footer-shop-name">{siteName}</span>
-              </div>
-
-              <button
-                type="button"
-                className="btn-footer-cashout"
-                onClick={() => {
-                  if (onCashOut) {
-                    onCashOut()
-                  } else {
-                    window.dispatchEvent(
-                      new CustomEvent('kiosk:cashout')
-                    )
-                  }
-                }}
-              >
-                <i className="fa-solid fa-circle-check me-1.5"></i> Cash Out
-              </button>
-            </div>
-
-            {/* 3-Column Footer Information (Evenly Distributed) */}
-            <div className="kiosk-footer-section">
-              <div className="kiosk-footer-grid">
-                <div className="footer-col-card">
-                  <div className="footer-brand-row">
-                    <span className="footer-brand-title">
-                      <i className="fa-solid fa-crown text-warning me-1.5"></i> WINBET
-                    </span>
-                    <span className="footer-brand-badge">
-                      <i className="fa-solid fa-shield-halved me-1"></i> OFFICIAL STATION
-                    </span>
-                  </div>
-                  <p className="footer-brand-desc">
-                    Authorized Gaming Terminal and Smart PC system. Powered by WinBet Gaming Central.
-                  </p>
-                  <div className="footer-badges-row">
-                    <span className="footer-encryption-badge">
-                      <i className="fa-solid fa-lock me-1.5"></i> 256-BIT ENCRYPTION
-                    </span>
-                    <span className="footer-age-badge">
-                      18+
-                    </span>
-                  </div>
-                </div>
-
-                <div className="footer-col-card">
-                  <div className="footer-col-heading">
-                    <i className="fa-solid fa-circle-info text-cyan me-1.5"></i> QUICK INFORMATION
-                  </div>
-                  <ul className="footer-info-list">
-                    <li>
-                      <i className="fa-solid fa-store text-warning me-2"></i>
-                      <span className="text-muted">Shop:</span> <strong>{siteName}</strong>
-                    </li>
-                    <li>
-                      <i className="fa-solid fa-desktop text-cyan me-2"></i>
-                      <span className="text-muted">Station:</span> <strong>{pcName}</strong>
-                    </li>
-                    <li>
-                      <i className="fa-solid fa-cash-register text-purple me-2"></i>
-                      <span className="text-muted">Mode:</span> <strong>Terminal (Cashier)</strong>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="footer-col-card">
-                  <div className="footer-col-heading">
-                    <i className="fa-solid fa-headset text-warning me-1.5"></i> PLAYER ASSISTANCE
-                  </div>
-                  <ul className="footer-info-list">
-                    <li>
-                      <i className="fa-solid fa-user-tie text-warning me-2"></i>
-                      Ask shop cashier for assistance
-                    </li>
-                    <li>
-                      <i className="fa-solid fa-ticket text-cyan me-2"></i>
-                      Always keep your cashout vouchers safe
-                    </li>
-                    <li>
-                      <i className="fa-solid fa-shield-heart text-success me-2"></i>
-                      Play responsibly (18+ only)
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
+        
         </>
       ) : null}
 

@@ -21,10 +21,7 @@ export default function KioskAlert() {
 
   const isScanner = alert.title.toLowerCase().includes('scan');
   const isBill = alert.title.toLowerCase().includes('cash') || alert.title.toLowerCase().includes('bill') || alert.title.toLowerCase().includes('note') || alert.title.toLowerCase().includes('coin');
-  const isPrinter = alert.title.toLowerCase().includes('print');
   
-  const modalCode = isBill ? '08' : isScanner ? '09' : isPrinter ? '04' : '01';
-  const modalBadgeLabel = isBill ? 'Bill Acceptor' : isScanner ? 'Scanner Alert' : isPrinter ? 'Printer Alert' : 'System Alert';
 
   const iconGlyph = isBill ? '💵' : isScanner ? '❙❙❙' : alert.tone === 'ok' ? '✓' : alert.tone === 'warn' ? '!' : '×';
   const iconThemeClass = isBill ? 'icon-gold' : isScanner ? 'icon-cyan' : alert.tone === 'ok' ? 'icon-green' : alert.tone === 'warn' ? 'icon-gold' : 'icon-red';
@@ -42,40 +39,40 @@ export default function KioskAlert() {
         aria-describedby="kx-alert-body"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Top Badge */}
-        <div className="winbet-modal-badge">
-          <span className="modal-badge-num">{modalCode}</span>
-          <span className="modal-badge-title">{modalBadgeLabel}</span>
-        </div>
-
         {/* Center Glowing Circular Icon */}
         <div className={`winbet-modal-icon-glow ${iconThemeClass}`}>
           <span className="modal-icon-symbol">{iconGlyph}</span>
         </div>
 
         {/* Heading & Subtext */}
-        <h2 id="kx-alert-title" className={`winbet-modal-title ${titleColorClass}`}>
-          {alert.title}
-        </h2>
-        <p id="kx-alert-body" className="winbet-modal-desc">
-          {alert.message}
-        </p>
+        <div className="kx-alert-text-content">
+          <h2 id="kx-alert-title" className={`winbet-modal-title ${titleColorClass}`}>
+            {alert.title}
+          </h2>
+          <p id="kx-alert-body" className="winbet-modal-desc">
+            {alert.message}
+          </p>
+        </div>
 
         {/* Recessed Info Box */}
         <div className="winbet-modal-recessed-box">
           <div className="recessed-row">
             <span className="recessed-label">Machine Credits:</span>
-            <span className="recessed-value">{balance > 0 ? `${symbol} ${balance.toFixed(2)}` : 'Unchanged'}</span>
+            <span className="recessed-value balance-highlight">
+              {balance > 0 ? `${symbol} ${Number(balance || 0).toFixed(2)}` : 'Unchanged'}
+            </span>
           </div>
           <div className="recessed-row">
             <span className="recessed-label">Status:</span>
-            <span className="recessed-value status-highlight">Ready for retry</span>
+            <span className={`recessed-value status-highlight ${titleColorClass}`}>
+              {alert.tone === 'ok' ? 'Success' : 'Ready for retry'}
+            </span>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="winbet-modal-actions">
-          <button type="button" className="btn-winbet-modal-primary" onClick={() => clearAlert()}>
+          <button type="button" className={`btn-winbet-modal-primary ${iconThemeClass}`} onClick={() => clearAlert()}>
             {btnText}
           </button>
           <button type="button" className="btn-winbet-modal-secondary" onClick={() => clearAlert()}>
