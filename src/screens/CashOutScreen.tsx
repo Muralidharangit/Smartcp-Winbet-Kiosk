@@ -23,7 +23,7 @@ export default function CashOutScreen() {
         {/* Realistic Theme-Friendly Digital Ticket Display */}
         <div className="premium-digital-ticket">
           <div className="ticket-header">
-            <div className="ticket-logo">WINBET KIOSK TICKET</div>
+            <div className="ticket-logo">BETWISE TERMINAL TICKET</div>
             <div className="ticket-terminal">{config?.Terminal_ID || 'TERMINAL-001'}</div>
           </div>
           

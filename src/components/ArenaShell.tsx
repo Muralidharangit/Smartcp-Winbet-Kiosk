@@ -63,7 +63,9 @@ export default function ArenaShell({
       setIsScrolled(scrollY > 15);
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     const layout = document.querySelector('.winbet-app-layout');
     if (layout) {
       layout.addEventListener('scroll', handleScroll, { passive: true });
@@ -71,19 +73,14 @@ export default function ArenaShell({
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
       if (layout) {
         layout.removeEventListener('scroll', handleScroll);
       }
     };
   }, []);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => undefined);
-    } else {
-      document.exitFullscreen?.().catch(() => undefined);
-    }
-  };
+
 
   const triggerStaffKey = () => {
     window.dispatchEvent(
@@ -102,13 +99,13 @@ export default function ArenaShell({
       {/* Top WINBET Header Bar */}
       {!hideHeader && (
         
-        <header className={`smart-pc-header-bar ${isScrolled ? 'is-scrolled' : ''} w-100 float-left`}>
-          <div className='container-fluid d-flex justify-content-between'>
- <div className="header-brand-wrap">
-            <div className="brand-winbet-logo" onClick={() => navigate('/home')} role="button" tabIndex={0}>
-              <span className="brand-win-part">WIN</span>
-              <span className="brand-bet-part">BET</span>
-            </div>
+        <header className={`smart-pc-header-bar ${isScrolled ? 'is-scrolled' : ''} `}>
+          <div className='container-fluid d-flex justify-content-between h-100 py-0 pt-3'>
+            <div className="header-brand-wrap">
+              <div className="brand-winbet-logo" onClick={() => navigate('/home')} role="button" tabIndex={0}>
+                <span className="brand-win-part">BET</span>
+                <span className="brand-bet-part">WISE</span>
+              </div>
 
             <div className="smart-pc-capsule">
               <span className="smart-pc-online-dot" />
@@ -150,14 +147,7 @@ export default function ArenaShell({
             >
               {muted ? <i className="fa-solid fa-volume-xmark"></i> : <i className="fa-solid fa-volume-high"></i>}
             </button>
-            <button
-              type="button"
-              className="header-square-btn"
-              title="Toggle Fullscreen"
-              onClick={toggleFullscreen}
-            >
-              <i className="fa-solid fa-expand"></i>
-            </button>
+           
             <button
               type="button"
               className="header-square-btn"

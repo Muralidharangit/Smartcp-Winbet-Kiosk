@@ -1,5 +1,5 @@
 {
-  "name": "betwise-kiosk-tauri",
+  "name": "betwise-terminal",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
+    "clean:cache": "rm -rf node_modules/.vite",
     "tauri:build": "tauri build",
     "tauri:build:deb": "tauri build --bundles deb",
     "tauri:build:windows": "tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis",

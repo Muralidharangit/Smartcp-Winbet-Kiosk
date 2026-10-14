@@ -10,7 +10,7 @@ export function RegistrationSuccessScreen({ result, onContinue }: Props) {
     <div className="winbet-app-layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="winbet-topbar">
         <div className="winbet-brand">
-          <span className="winbet-brand-text">WINBET</span>
+          <span className="winbet-brand-text">BETWISE TERMINAL</span>
         </div>
         <div className="terminal-name" style={{ color: '#c4b5fd', fontSize: '0.85rem' }}>
           <span>Terminal Kiosk Setup</span>

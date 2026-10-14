@@ -154,7 +154,7 @@ export function GamePlayPanel({
           <div className="game-launch-title-wrap">
             <div className="game-launch-title-row">
               <h2 className="game-launch-name">{game.name}</h2>
-              <span className="game-launch-provider-badge">WINBET ORIGINAL</span>
+              <span className="game-launch-provider-badge">BETWISE ORIGINAL</span>
             </div>
             <div className="game-launch-meta-row">
               <span className="game-launch-live-tag">
@@ -167,8 +167,8 @@ export function GamePlayPanel({
 
         <div className="game-launch-header-center">
           <div className="game-launch-brand">
-            <span className="brand-win">WIN</span>
-            <span className="brand-bet">BET</span>
+            <span className="brand-win">BET</span>
+            <span className="brand-bet">WISE</span>
             <span className="brand-kiosk-tag">ORIGINALS</span>
           </div>
 

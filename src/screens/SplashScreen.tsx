@@ -17,8 +17,8 @@ export default function SplashScreen({ redirectTo }: { redirectTo?: string }) {
           <span className="logo-glyph">🎰</span>
         </div>
         <div className="splash-brand-title">
-          <span className="brand-win-part">WIN</span>
-          <span className="brand-bet-part">BET</span>
+          <span className="brand-win-part">BET</span>
+          <span className="brand-bet-part">WISE</span>
         </div>
         <div className="splash-brand-sub">TERMINAL KIOSK SYSTEM</div>
         <div className="splash-loader-bar">

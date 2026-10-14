@@ -15,8 +15,8 @@
 }
 
 @media (max-width: 991px) {
-  .custom-navbar, .smart-pc-header {
-    padding: 8px 16px;
+  .custom-navbar, .smart-pc-header, .smart-pc-header-bar, .winbet-topbar {
+    padding: 8px 16px !important;
   }
   
   .jackpot-inner-row {
@@ -51,8 +51,8 @@
 }
 
 @media (max-width: 576px) {
-  .custom-navbar, .smart-pc-header {
-    padding: 8px 12px;
+  .custom-navbar, .smart-pc-header, .smart-pc-header-bar, .winbet-topbar {
+    padding: 6px 12px !important;
   }
   
   .brand-logo-img, .header-logo {

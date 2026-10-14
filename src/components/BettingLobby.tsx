@@ -1163,7 +1163,7 @@ export function BettingLobby({
           {/* ==========================================================================
               2. TERMINAL VIP CLUB & CASHIER PERKS (Separate Section Card)
               ========================================================================== */}
-          <div className="vip-perks-section mt-4">
+          {/* <div className="vip-perks-section mt-4">
             <div className="vip-perks-header">
               <div className="vip-perks-title">
                 <span className="vip-badge-icon">🏅</span>
@@ -1176,7 +1176,7 @@ export function BettingLobby({
             </div>
 
             <div className="vip-perks-grid">
-              {/* Card 1 */}
+             
               <div className="vip-perk-card">
                 <div className="perk-card-top">
                   <div className="perk-icon-wrap icon-gold">
@@ -1193,7 +1193,7 @@ export function BettingLobby({
                 </button>
               </div>
 
-              {/* Card 2 */}
+             
               <div className="vip-perk-card">
                 <div className="perk-card-top">
                   <div className="perk-icon-wrap icon-green">
@@ -1210,7 +1210,7 @@ export function BettingLobby({
                 </button>
               </div>
 
-              {/* Card 3 */}
+            
               <div className="vip-perk-card">
                 <div className="perk-card-top">
                   <div className="perk-icon-wrap icon-purple">
@@ -1227,7 +1227,7 @@ export function BettingLobby({
                 </button>
               </div>
 
-              {/* Card 4 */}
+             
               <div className="vip-perk-card">
                 <div className="perk-card-top">
                   <div className="perk-icon-wrap icon-cyan">
@@ -1244,7 +1244,7 @@ export function BettingLobby({
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* ==========================================================================
               3. NEED HELP / CASH BALANCE TOP-UP BANNER (Separate Card)

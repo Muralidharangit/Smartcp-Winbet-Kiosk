@@ -187,8 +187,8 @@ export function ProviderGamePanel({
         {/* Center: WINBET Casino branding & Terminal status capsule */}
         <div className="game-launch-header-center">
           <div className="game-launch-brand">
-            <span className="brand-win">WIN</span>
-            <span className="brand-bet">BET</span>
+            <span className="brand-win">BET</span>
+            <span className="brand-bet">WISE</span>
             <span className="brand-kiosk-tag">CASINO</span>
           </div>
 

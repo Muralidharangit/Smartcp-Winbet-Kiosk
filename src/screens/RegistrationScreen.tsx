@@ -105,7 +105,7 @@ export function RegistrationScreen({ onRegistered, onCancel }: Props) {
         {/* Header with Title and LIVE API Pill */}
         <div className="winbet-reg-header">
           <h2 className="winbet-reg-title">Register Machine</h2>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
               type="button"
               onClick={() => setShowKeyboard((prev) => !prev)}
@@ -123,8 +123,8 @@ export function RegistrationScreen({ onRegistered, onCancel }: Props) {
             >
               ⌨️ {showKeyboard ? 'Hide Touch Keyboard' : 'Touch Keyboard'}
             </button>
-            <span className="winbet-reg-api-badge">LIVE API</span>
-          </div>
+            
+          </div> */}
         </div>
 
         <p className="winbet-reg-desc">
@@ -192,7 +192,8 @@ export function RegistrationScreen({ onRegistered, onCancel }: Props) {
             className="winbet-reg-label"
             style={{ color: activeField === 'token' ? '#f5b300' : undefined }}
           >
-            REGISTRATION TOKEN {activeField === 'token' ? '◀ (Active)' : ''}
+            REGISTRATION TOKEN 
+             {/* {activeField === 'token' ? '◀ (Active)' : ''} */}
           </label>
           <input
             id="registration_token"

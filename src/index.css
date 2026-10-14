@@ -112,7 +112,7 @@ input {
 .smart-pc-header-bar,
 .winbet-topbar {
 
-  padding: 30px 30px !important;
+  padding: 10px 30px !important;
   min-height: 82px !important;
   height: 82px !important;
   box-sizing: border-box !important;
@@ -131,6 +131,7 @@ input {
               min-height 0.28s cubic-bezier(0.16, 1, 0.3, 1),
               height 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: padding, background, box-shadow;
+  
 }
 
 .smart-pc-header-bar.is-scrolled,
@@ -163,8 +164,8 @@ body.is-game-active .winbet-topbar,
 
 .header-brand-wrap,
 .topbar-left {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
   gap: 16px;
 }
 
